@@ -26,7 +26,7 @@ iOS: https://youtu.be/q7RkwP5KWxk?si=XLoITGCucAORvAOD
 
 ## Run on iOS
 
-When you're ready, navigate to `/ios`, open `omniRing.xcodeproj`, select a real iPhone (simulator won't work for bluetooth), then hit Play.
+When you're ready, navigate to `/ios`, open `omniRing.xcworkspace`, select a real iPhone (simulator won't work for bluetooth), then hit Play.
 
 Configure development team as necessary.
 
