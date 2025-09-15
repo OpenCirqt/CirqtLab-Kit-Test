@@ -1,0 +1,290 @@
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/RNBarLineChartBaseManager.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/RNBarLineChartBaseManager.swift
+index 387b8b9..b302441 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/RNBarLineChartBaseManager.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/RNBarLineChartBaseManager.swift
+@@ -1,72 +1,106 @@
+-//
+-//  Created by wuxudong on 14/12/2017.
+-//  Copyright © 2017 wuxudong. All rights reserved.
+-//
+-
+-import Foundation
+ import DGCharts
+ 
+ protocol RNBarLineChartBaseManager {
+-  var _bridge : RCTBridge? {get}
++    var _bridge : RCTBridge? {get}
+ }
+ 
+ extension RNBarLineChartBaseManager {
+-  func _moveViewToX(_ reactTag: NSNumber, xValue: NSNumber) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).moveViewToX(xValue.doubleValue);
++    func _moveViewToX(_ reactTag: NSNumber, xValue: NSNumber) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++
++            barLineChart.moveViewToX(xValue.doubleValue);
++        }
+     }
+-  }
+ 
+-  func _moveViewTo(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).moveViewTo(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String));
++    func _moveViewTo(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++
++            barLineChart.moveViewTo(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String));
++        }
+     }
+-  }
+ 
+-  func _moveViewToAnimated(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString, duration: NSNumber) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).moveViewToAnimated(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String), duration: duration.doubleValue / 1000.0);
++    func _moveViewToAnimated(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString, duration: NSNumber) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++
++            barLineChart.moveViewToAnimated(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String), duration: duration.doubleValue / 1000.0);
++        }
+     }
+-  }
+ 
+-  func _centerViewTo(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).centerViewTo(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String));
++    func _centerViewTo(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++
++            barLineChart.centerViewTo(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String));
++        }
+     }
+-  }
+ 
+-  func _centerViewToAnimated(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString, duration: NSNumber) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).centerViewToAnimated(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String), duration: duration.doubleValue / 1000.0);
++    func _centerViewToAnimated(_ reactTag: NSNumber, xValue: NSNumber, yValue: NSNumber, axisDependency: NSString, duration: NSNumber) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++
++            barLineChart.centerViewToAnimated(xValue: xValue.doubleValue, yValue: yValue.doubleValue, axis: BridgeUtils.parseAxisDependency(axisDependency as String), duration: duration.doubleValue / 1000.0);
++        }
+     }
+-  }
+ 
+-  func _fitScreen(_ reactTag: NSNumber) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).fitScreen();
++    func _fitScreen(_ reactTag: NSNumber) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++
++            barLineChart.fitScreen();
++        }
+     }
+-  }
+ 
+-  func _highlights(_ reactTag: NSNumber, config: NSArray) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      (view.chart as! BarLineChartViewBase).highlightValues(HighlightUtils.getHighlights(config));
++    func _highlights(_ reactTag: NSNumber, config: NSArray) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++            guard let view: RNBarLineChartViewBase = viewRegistry?[reactTag] as? RNBarLineChartViewBase,
++                  let barLineChart = view.chart as? BarLineChartViewBase
++            else {
++                return
++            }
++            barLineChart.highlightValues(HighlightUtils.getHighlights(config));
++        }
+     }
+-  }
+ 
+-  func _setDataAndLockIndex(_ reactTag: NSNumber, data: NSDictionary) {
+-    _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
+-      let view: RNBarLineChartViewBase = viewRegistry![reactTag] as! RNBarLineChartViewBase;
+-      view.setDataAndLockIndex(data);
++    func _setDataAndLockIndex(_ reactTag: NSNumber, data: NSDictionary) {
++        _bridge?.uiManager.addUIBlock { (uiManager: RCTUIManager?, viewRegistry:[NSNumber : UIView]?) in
++            guard
++                let view = viewRegistry?[reactTag] as? RNBarLineChartViewBase
++            else {
++                return
++            }
++            view.setDataAndLockIndex(data);
++        }
+     }
+-  }
+ }
+\ No newline at end of file
+-
+-
+-
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bar/RNBarChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bar/RNBarChartView.swift
+index fef1570..bf2682e 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bar/RNBarChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bar/RNBarChartView.swift
+@@ -29,6 +29,11 @@ class RNBarChartView: RNBarChartViewBase {
+         self.addSubview(_chart)
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bubble/RNBubbleChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bubble/RNBubbleChartView.swift
+index 842e2b8..a630f04 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bubble/RNBubbleChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/bubble/RNBubbleChartView.swift
+@@ -30,6 +30,11 @@ class RNBubbleChartView: RNBarLineChartViewBase {
+ 
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required public init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/candlestick/RNCandleStickChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/candlestick/RNCandleStickChartView.swift
+index 03b7478..b163fb5 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/candlestick/RNCandleStickChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/candlestick/RNCandleStickChartView.swift
+@@ -30,6 +30,11 @@ class RNCandleStickChartView: RNBarLineChartViewBase {
+         self.addSubview(_chart);
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/combine/RNCombinedChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/combine/RNCombinedChartView.swift
+index 1979e7a..b85c4d9 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/combine/RNCombinedChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/combine/RNCombinedChartView.swift
+@@ -29,6 +29,11 @@ class RNCombinedChartView: RNBarLineChartViewBase {
+         self.addSubview(_chart)
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/line/RNLineChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/line/RNLineChartView.swift
+index 2f7bf91..1f14e2e 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/line/RNLineChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/line/RNLineChartView.swift
+@@ -29,6 +29,11 @@ class RNLineChartView: RNBarLineChartViewBase {
+ 
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/pie/RNPieChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/pie/RNPieChartView.swift
+index 4a8167b..b854627 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/pie/RNPieChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/pie/RNPieChartView.swift
+@@ -29,6 +29,11 @@ class RNPieChartView: RNChartViewBase {
+ 
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/radar/RNRadarChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/radar/RNRadarChartView.swift
+index f3fb881..19c94af 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/radar/RNRadarChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/radar/RNRadarChartView.swift
+@@ -37,6 +37,11 @@ class RNRadarChartView: RNYAxisChartViewBase {
+         self.addSubview(_chart)
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
+diff --git a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/scatter/RNScatterChartView.swift b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/scatter/RNScatterChartView.swift
+index 24aeda6..9b02fd9 100644
+--- a/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/scatter/RNScatterChartView.swift
++++ b/node_modules/react-native-charts-wrapper/ios/ReactNativeCharts/scatter/RNScatterChartView.swift
+@@ -29,6 +29,11 @@ class RNScatterChartView: RNBarLineChartViewBase {
+ 
+     }
+ 
++    override func layoutSubviews() {
++        super.layoutSubviews()
++        _chart.frame = self.bounds // Adjust the chart's frame to fill the entire component's bounds
++    }
++
+     required init?(coder aDecoder: NSCoder) {
+         fatalError("init(coder:) has not been implemented")
+     }
