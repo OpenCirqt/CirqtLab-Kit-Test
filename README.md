@@ -3,7 +3,9 @@
 An app to monitor and collect sensor data from Omni Ring, with firmware upgrade capability.
 
 ## Demo
+
 iOS: https://youtu.be/q7RkwP5KWxk?si=XLoITGCucAORvAOD
+
 Android: https://youtu.be/RUDWIhmi_AQ?si=TjyfcvOSTkZVFZVK
 
 ## Get started
