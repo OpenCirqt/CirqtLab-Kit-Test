@@ -198,7 +198,6 @@ const FileManagerScreen = () => {
       } else {
         zipOrFilePath = `${item.uri}`;
       }
-      console.log(zipOrFilePath);
       // Share the zip
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert("Sharing not available", "This device does not support sharing files.");
