@@ -79,8 +79,7 @@ const TabNavigator = () => {
       screenOptions={{
         headerShown: false,
         tabBarLabelStyle: {
-          fontWeight: 600,
-          fontFamily: "Poppins-Regular",
+          fontFamily: "Inter_500Medium",
           color: Colors.black,
         },
       }}

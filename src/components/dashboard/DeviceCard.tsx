@@ -36,14 +36,14 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         style={styles.iconLeft}
       />
 
-      <View>
-        <TextUi style={styles.label} weight="medium" tag="h4">
+      <View style={styles.labelGroup}>
+        <TextUi weight="medium" tag="h4">
           {peripheral.name ?? ""}
         </TextUi>
-        <TextUi style={[styles.label, styles.description]} tag="h5">
+        <TextUi style={styles.description} tag="h5">
           id: {peripheral.id}
         </TextUi>
-        <TextUi style={[styles.label, styles.description]} tag="h5">
+        <TextUi style={styles.description} tag="h5">
           RSSI: {peripheral.rssi}
         </TextUi>
       </View>
@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
+    gap: px(12),
     paddingHorizontal: px(24),
-    justifyContent: "space-between",
     paddingVertical: px(18),
     borderWidth: px(2),
     borderColor: Colors.white,
@@ -91,14 +91,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     width: px(40),
   },
-  label: {
-    flex: 1,
+  labelGroup: {
     flexShrink: 1,
-    flexWrap: "wrap",
-    textAlign: "left",
+    flex: 1,
   },
   description: {
-    color: Colors.infoTitleText,
+    color: Colors.infoTitleText
   },
   cardOpaque: {
     opacity: 0.6,

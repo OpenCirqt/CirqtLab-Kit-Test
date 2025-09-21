@@ -3,6 +3,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as FileSystem from "expo-file-system";
 import { useNavigation } from "expo-router";
+import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,7 +16,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Share from "react-native-share";
 import { zip } from "react-native-zip-archive";
 import ModalUi from "../components/common/ModalUi";
 import TextUi from "../components/common/TextUi";
@@ -191,22 +191,20 @@ const FileManagerScreen = () => {
     setExportingFileId(item.uri);
     setToBeShared(true);
     try {
+      let zipOrFilePath = "";
       if (item.isDirectory) {
-        const zipPath = `${item.uri}${item.name}.zip`;
-        await zip(item.uri, zipPath);
-        await Share.open({
-          url: zipPath,
-          type: "application/zip",
-          failOnCancel: false,
-        });
+        zipOrFilePath = `${item.uri}${item.name}.zip`;
+        await zip(item.uri, zipOrFilePath);
       } else {
-        await Share.open({
-          url: item.uri,
-          filename: `${item.name}.csv`,
-          type: "text/csv",
-          failOnCancel: false,
-        });
+        zipOrFilePath = `${item.uri}`;
       }
+      console.log(zipOrFilePath);
+      // Share the zip
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert("Sharing not available", "This device does not support sharing files.");
+        return;
+      }
+      await Sharing.shareAsync(zipOrFilePath);
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
@@ -424,9 +422,13 @@ const FileManagerScreen = () => {
                 <Ionicons
                   name="close-outline"
                   size={24}
-                  color={Colors.black}
+                  color={Colors.secondary}
                 ></Ionicons>
-                <TextUi tag="h3" weight="medium">
+                <TextUi
+                  tag="h3"
+                  weight="medium"
+                  style={{ color: Colors.secondary }}
+                >
                   {selectedItems.size}
                 </TextUi>
               </TouchableOpacity>
@@ -477,7 +479,7 @@ const FileManagerScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.lightGray,
+    backgroundColor: Colors.warmGray,
   },
   fileManagerHeaderContainer: {
     backgroundColor: Colors.primary,
@@ -520,8 +522,8 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: fs(4),
-    elevation: fs(3), // for Android
+    shadowRadius: fs(2),
+    elevation: 0, // for Android
   },
   fileManagerToolbarWrapper: {
     backgroundColor: Colors.primary,
@@ -532,7 +534,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderTopLeftRadius: px(24),
     borderTopRightRadius: px(24),
-    backgroundColor: Colors.lightGray,
+    backgroundColor: Colors.warmGray,
 
     paddingHorizontal: px(24),
     height: px(90),
@@ -540,10 +542,12 @@ const styles = StyleSheet.create({
   fileSelected: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.warmGray,
+    backgroundColor: Colors.lightGray,
     borderRadius: px(24),
     paddingVertical: px(4),
     paddingHorizontal: px(16),
+    borderWidth: px(1),
+    borderColor: Colors.secondary,
   },
   fileDir: {
     paddingVertical: px(8),
@@ -554,7 +558,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: fs(4),
-    elevation: fs(3), // for Android
+    elevation: 0, // for Android
   },
 });
 

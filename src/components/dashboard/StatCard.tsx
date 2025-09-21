@@ -1,5 +1,5 @@
 import { Colors } from "@/src/theme";
-import { fs, px } from "@/src/utils/setSize";
+import { px } from "@/src/utils/setSize";
 import React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
 import TextUi from "../common/TextUi";
@@ -25,7 +25,7 @@ const StatCard: React.FC<StatCardProps> = ({
         {title}
       </TextUi>
       <View style={styles.statValueContainer}>
-        <TextUi tag="h2" weight="bold">
+        <TextUi tag="h2" weight="medium">
           {decimal ? value.toFixed(decimal) : value}
         </TextUi>
         <TextUi tag="h4" weight="medium">
@@ -38,14 +38,14 @@ const StatCard: React.FC<StatCardProps> = ({
 
 const styles = StyleSheet.create({
   statCardContainer: {
-    borderRadius: fs(8),
+    borderRadius: px(8),
     backgroundColor: Colors.warmGray,
     padding: px(8),
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: fs(4),
-    elevation: fs(3), // for Android
+    shadowRadius: px(4),
+    elevation: px(2), // for Android
   },
   statHeader: {
     color: Colors.infoTitleText,

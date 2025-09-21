@@ -326,6 +326,7 @@ const DashboardScreen = () => {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={styles.container}
+        contentContainerStyle={styles.contentContainerStyle}
       >
         {isAutoReconnect && connectedDevice?.id ? (
           <NotificationUi
@@ -534,6 +535,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGray,
     padding: px(30),
   },
+  contentContainerStyle: {
+    paddingBottom: px(60),
+  },
   graphCard: {
     height: 280,
     padding: px(16),
@@ -543,7 +547,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: px(4),
-    elevation: 3, // for Android
+    elevation: px(2), // for Android
     backgroundColor: Colors.white,
   },
   graphCardHeaderContainer: {

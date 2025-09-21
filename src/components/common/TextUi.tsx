@@ -46,11 +46,18 @@ const TextUi: React.FC<TextUiProps> = ({
     baseStyle.fontWeight ??
     (weight === "bold" ? "600" : weight === "medium" ? "500" : "400");
 
+  const fontFamily =
+    weight === "bold"
+      ? "Inter_600SemiBold"
+      : weight === "medium"
+      ? "Inter_500Medium"
+      : "Inter_400Regular";
+
   const textStyle: TextStyle = {
     ...baseStyle,
     fontWeight,
     color: Colors.text,
-    fontFamily: "Poppins-Regular",
+    fontFamily: fontFamily,
   };
 
   return <Text style={[textStyle, style]}>{children}</Text>;

@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import { Colors } from "../../theme";
-import { px } from "../../utils/setSize";
+import { fs } from "../../utils/setSize";
 import TextUi from "./TextUi";
 
 type ButtonType = "primary" | "secondary" | "disabled" | "warning";
@@ -16,9 +16,9 @@ type ButtonUiProps = {
 };
 
 const SIZE_MAP: Record<ButtonSize, number> = {
-  small: px(10),
-  medium: px(13),
-  large: px(16),
+  small: fs(10),
+  medium: fs(13),
+  large: fs(16),
 };
 
 const BUTTON_STYLE_MAP: Record<
@@ -73,15 +73,15 @@ const ButtonUi: React.FC<ButtonUiProps> = ({
   const stylesForType = BUTTON_STYLE_MAP[type];
 
   const baseButtonStyle: ViewStyle = {
-    paddingHorizontal: px(18),
+    paddingHorizontal: fs(18),
     paddingVertical: padding,
-    borderRadius: padding + px(18),
+    borderRadius: padding + fs(18),
     borderWidth: 2,
     borderColor: "transparent",
   };
 
   const baseTextStyle: TextStyle = {
-    fontFamily: "Poppins-SemiBold",
+    fontFamily: "Inter_500Medium",
   };
 
   return (
@@ -117,7 +117,7 @@ const ButtonUi: React.FC<ButtonUiProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    marginVertical: px(10),
+    marginVertical: fs(10),
   },
   buttonText: {
     alignSelf: "center",

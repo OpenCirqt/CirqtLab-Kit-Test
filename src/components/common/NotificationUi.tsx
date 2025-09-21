@@ -61,14 +61,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    padding: fs(8),
-    marginBottom: fs(8),
-    borderRadius: fs(8),
+    padding: px(8),
+    marginBottom: px(8),
+    borderRadius: px(10),
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: fs(4),
-    elevation: fs(3), // for Android
+    shadowRadius: px(4),
+    elevation: px(2), // for Android
   },
   warning: {
     backgroundColor: Colors.primary,
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   messageWrapper: {
     flex: 1,
     minWidth: 0,
-    marginHorizontal: fs(8),
+    marginHorizontal: px(8),
   },
   message: {
     flexShrink: 1,

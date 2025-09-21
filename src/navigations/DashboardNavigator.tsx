@@ -22,8 +22,7 @@ const DashboardNavigator = () => {
       screenOptions={{
         headerBackTitle: "",
         headerTitleStyle: {
-          fontFamily: "Poppins-Regular",
-          fontWeight: 600,
+          fontFamily: "Inter_600SemiBold",
         },
         headerTintColor: Colors.black,
       }}

@@ -8,25 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		1A5F9869BC703F584D6E449E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 17A233D2C8785A256AA05F38 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		4E1D0923BC2D5D71EAA647F2 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB63FCDCF3ED40B11878899C /* ExpoModulesProvider.swift */; };
-		70B13A3A91344853DA8FFC3A /* libPods-omniRing.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DA28C8735457766067DE7574 /* libPods-omniRing.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		D961B22EC6A98B9C2796FF1F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B988F6D7847CDD348FF060F6 /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F22E35B3767B48B90285F91E /* libPods-omniRing.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CFFBDF710096E9042CFCF494 /* libPods-omniRing.a */; };
+		F6E0C1406FC03B0E8BCBAC00 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA293FBA2D64A0636DCE73F3 /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		01FE53B0BB70F40573E105B7 /* Pods-omniRing.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-omniRing.debug.xcconfig"; path = "Target Support Files/Pods-omniRing/Pods-omniRing.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* omniRing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = omniRing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = omniRing/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = omniRing/Info.plist; sourceTree = "<group>"; };
-		17A233D2C8785A256AA05F38 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = omniRing/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		4A3F9AAF86981DF9116C999D /* Pods-omniRing.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-omniRing.release.xcconfig"; path = "Target Support Files/Pods-omniRing/Pods-omniRing.release.xcconfig"; sourceTree = "<group>"; };
+		7F117FFD7577BE6DEECC0465 /* Pods-omniRing.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-omniRing.debug.xcconfig"; path = "Target Support Files/Pods-omniRing/Pods-omniRing.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = omniRing/SplashScreen.storyboard; sourceTree = "<group>"; };
-		AB63FCDCF3ED40B11878899C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-omniRing/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AFA17CED1FFD2DC5ABE26545 /* Pods-omniRing.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-omniRing.release.xcconfig"; path = "Target Support Files/Pods-omniRing/Pods-omniRing.release.xcconfig"; sourceTree = "<group>"; };
+		B988F6D7847CDD348FF060F6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = omniRing/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		DA28C8735457766067DE7574 /* libPods-omniRing.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-omniRing.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA293FBA2D64A0636DCE73F3 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-omniRing/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		CFFBDF710096E9042CFCF494 /* libPods-omniRing.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-omniRing.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = omniRing/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* omniRing-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "omniRing-Bridging-Header.h"; path = "omniRing/omniRing-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,22 +37,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				70B13A3A91344853DA8FFC3A /* libPods-omniRing.a in Frameworks */,
+				F22E35B3767B48B90285F91E /* libPods-omniRing.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1238A5043E04F7CD7F11A28B /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				01FE53B0BB70F40573E105B7 /* Pods-omniRing.debug.xcconfig */,
-				AFA17CED1FFD2DC5ABE26545 /* Pods-omniRing.release.xcconfig */,
-			);
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* omniRing */ = {
 			isa = PBXGroup;
 			children = (
@@ -62,34 +53,34 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				17A233D2C8785A256AA05F38 /* PrivacyInfo.xcprivacy */,
+				B988F6D7847CDD348FF060F6 /* PrivacyInfo.xcprivacy */,
 			);
 			name = omniRing;
+			sourceTree = "<group>";
+		};
+		18AB4DAB577D66BBB91653D6 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				55B736FAE51A48E45CD8B6A0 /* omniRing */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				DA28C8735457766067DE7574 /* libPods-omniRing.a */,
+				CFFBDF710096E9042CFCF494 /* libPods-omniRing.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		53D86F38801B1DBB088F261D /* omniRing */ = {
+		55B736FAE51A48E45CD8B6A0 /* omniRing */ = {
 			isa = PBXGroup;
 			children = (
-				AB63FCDCF3ED40B11878899C /* ExpoModulesProvider.swift */,
+				CA293FBA2D64A0636DCE73F3 /* ExpoModulesProvider.swift */,
 			);
 			name = omniRing;
-			sourceTree = "<group>";
-		};
-		6F7F8E727048BF30BFFF2C96 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				53D86F38801B1DBB088F261D /* omniRing */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -106,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				1238A5043E04F7CD7F11A28B /* Pods */,
-				6F7F8E727048BF30BFFF2C96 /* ExpoModulesProviders */,
+				B7CB8FF25104D8B8E77B565F /* Pods */,
+				18AB4DAB577D66BBB91653D6 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -120,6 +111,15 @@
 				13B07F961A680F5B00A75B9A /* omniRing.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B7CB8FF25104D8B8E77B565F /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				7F117FFD7577BE6DEECC0465 /* Pods-omniRing.debug.xcconfig */,
+				4A3F9AAF86981DF9116C999D /* Pods-omniRing.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -139,13 +139,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "omniRing" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				8465C45BBE22A3883C33DA6A /* [Expo] Configure project */,
+				B94DD040AC8C03FE64C352EC /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				A091FFCF2D15436A8FC84D33 /* [CP] Embed Pods Frameworks */,
+				3B53915C5A40E696B16C9109 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,7 +195,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				1A5F9869BC703F584D6E449E /* PrivacyInfo.xcprivacy in Resources */,
+				D961B22EC6A98B9C2796FF1F /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,6 +237,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		3B53915C5A40E696B16C9109 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-omniRing/Pods-omniRing-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-omniRing/Pods-omniRing-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
@@ -283,7 +301,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-omniRing/Pods-omniRing-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		8465C45BBE22A3883C33DA6A /* [Expo] Configure project */ = {
+		B94DD040AC8C03FE64C352EC /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -302,24 +320,6 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-omniRing/expo-configure-project.sh\"\n";
 		};
-		A091FFCF2D15436A8FC84D33 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-omniRing/Pods-omniRing-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-omniRing/Pods-omniRing-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -328,7 +328,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				4E1D0923BC2D5D71EAA647F2 /* ExpoModulesProvider.swift in Sources */,
+				F6E0C1406FC03B0E8BCBAC00 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -337,7 +337,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01FE53B0BB70F40573E105B7 /* Pods-omniRing.debug.xcconfig */;
+			baseConfigurationReference = 7F117FFD7577BE6DEECC0465 /* Pods-omniRing.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -374,7 +374,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AFA17CED1FFD2DC5ABE26545 /* Pods-omniRing.release.xcconfig */;
+			baseConfigurationReference = 4A3F9AAF86981DF9116C999D /* Pods-omniRing.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

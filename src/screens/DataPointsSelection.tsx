@@ -128,12 +128,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: px(4),
-    elevation: 3, // for Android
+    elevation: px(2), // for Android
     backgroundColor: Colors.white,
   },
   sectionHeader: {
     paddingBottom: px(24),
-    letterSpacing: 1,
   },
   imuContainer: {
     flexDirection: "row",

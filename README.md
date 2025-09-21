@@ -4,6 +4,7 @@ An app to monitor and collect sensor data from Omni Ring, with firmware upgrade 
 
 ## Demo
 iOS: https://youtu.be/q7RkwP5KWxk?si=XLoITGCucAORvAOD
+Android: https://youtu.be/RUDWIhmi_AQ?si=TjyfcvOSTkZVFZVK
 
 ## Get started
 
@@ -13,23 +14,34 @@ iOS: https://youtu.be/q7RkwP5KWxk?si=XLoITGCucAORvAOD
    npm install
    ```
 
-2. Start the app
+## Run on iOS
+
+1. Start the app
 
    ```bash
    npx expo start
    ```
 
-3. Prebuild the app
+2. Prebuild the app
     ```bash
     npx expo prebuild --clean
     ```
 
-## Run on iOS
+3. Open XCode
+    
+    When you're ready, navigate to `/ios`, open `omniRing.xcworkspace`, select a real iPhone (simulator won't work for bluetooth), then hit Play.
 
-When you're ready, navigate to `/ios`, open `omniRing.xcworkspace`, select a real iPhone (simulator won't work for bluetooth), then hit Play.
-
-Configure development team as necessary.
+    Configure development team as necessary.
 
 ## Run on Android
 
-TBD, testing in progress...
+1. Prebuild the app
+    ```bash
+    npx expo prebuild --clean
+    ```
+
+2. Run on real Android device
+    
+    Plug in a physical Android device onto your computer (that runs the expo app), and **Enable Debugging**.
+
+    Then run `npx expo run:android`.

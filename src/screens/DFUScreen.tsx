@@ -9,7 +9,7 @@ import ExpoNordicDfu from "@xinhao128/expo-nordic-dfu";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { useNavigation } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -74,7 +74,7 @@ const DFUScreen = () => {
   const [firmwareProgress, setFirmwareProgress] = useState<
     ProgressType | undefined
   >(undefined);
-  const [currentIndex, setCurrentIndex] = useState(-1);
+  const currentIndexRef = useRef(-1);
 
   const navigation = useNavigation<DFUSCreenNavigationProp>();
 
@@ -144,24 +144,28 @@ const DFUScreen = () => {
       });
       ExpoNordicDfu.module.addListener("DFUStateChanged", ({ state }) => {
         console.info("DFUStateChanged:", state);
-        if (
-          state === "CONNECTING" ||
-          state === "DFU_PROCESS_STARTING" ||
-          state === "ENABLING_DFU_MODE"
+
+        if (currentIndexRef.current < 0) {
+          currentIndexRef.current = 0;
+        } else if (
+          state === "DFU_UPLOADING" ||
+          state === "DFU_PROCESS_STARTED"
         ) {
-          setCurrentIndex(0);
-        } else if (state === "DFU_UPLOADING") {
-          setCurrentIndex(1);
+          if (currentIndexRef.current === 0) {
+            currentIndexRef.current = 1;
+          }
         } else if (
           state === "FIRMWARE_VALIDING" ||
           state === "DEVICE_DISCONNECTING"
         ) {
-          setCurrentIndex(2);
+          if (currentIndexRef.current === 1) {
+            currentIndexRef.current = 2;
+          }
         } else if (state === "DFU_FAILED" || state === "DFU_ABORTED") {
-          setCurrentIndex(FAILED_INDEX);
+          currentIndexRef.current = FAILED_INDEX;
           disconnect();
-        } else {
-          setCurrentIndex(3);
+        } else if (state === "DFU_COMPLETED") {
+          currentIndexRef.current = 3;
           dispatch(clearPeripheral());
         }
 
@@ -270,7 +274,7 @@ const DFUScreen = () => {
               {Object.values(DFUSteps).map((step, index) => {
                 let icon = null;
 
-                if (currentIndex === FAILED_INDEX) {
+                if (currentIndexRef.current === FAILED_INDEX) {
                   icon = (
                     <Ionicons
                       name="close-circle"
@@ -279,7 +283,7 @@ const DFUScreen = () => {
                     />
                   );
                 } else {
-                  if (index < currentIndex) {
+                  if (index < currentIndexRef.current) {
                     icon = (
                       <Ionicons
                         name="checkmark-circle"
@@ -287,7 +291,7 @@ const DFUScreen = () => {
                         color={Colors.primary}
                       />
                     );
-                  } else if (index === currentIndex) {
+                  } else if (index === currentIndexRef.current) {
                     icon = (
                       <ActivityIndicator size="small" color={Colors.black} />
                     );
@@ -312,7 +316,7 @@ const DFUScreen = () => {
                         {toSentenceCase(step)}
                       </TextUi>
                     </View>
-                    {step === "DFU_UPLOADING" && currentIndex === 1 && (
+                    {step === "DFU_UPLOADING" && currentIndexRef.current === 1 && (
                       <ProgressBar progress={firmwareProgress?.percent ?? 0} />
                     )}
                   </View>
@@ -353,7 +357,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: px(4),
-    elevation: px(3), // for Android
+    elevation: px(2), // for Android
     backgroundColor: Colors.white,
   },
   stepNumber: {
@@ -388,7 +392,7 @@ const styles = StyleSheet.create({
     gap: px(16),
   },
   uploadStatusIconContainer: {
-    width: px(30),
+    width: px(40),
     alignItems: "center",
   },
 });

@@ -154,7 +154,7 @@ const BluetoothConnectionScreen = () => {
           );
         }}
         renderSectionHeader={({ section: { title } }) => (
-          <TextUi tag="h4" weight="medium" style={styles.sectionHeader}>
+          <TextUi tag="h4" weight="bold" style={styles.sectionHeader}>
             {title}
           </TextUi>
         )}

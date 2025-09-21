@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: fs(4),
-    elevation: fs(3), // for Android
+    shadowRadius: px(4),
+    elevation: px(2), // for Android
   },
 });
 

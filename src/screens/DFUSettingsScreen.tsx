@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 1, height: 2 },
     shadowRadius: px(4),
-    elevation: px(3), // for Android
+    elevation: px(2), // for Android
     backgroundColor: Colors.warmGray,
   },
   sectionTitle: {
