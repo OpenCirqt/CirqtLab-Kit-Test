@@ -60,7 +60,7 @@
 			[
 				"react-native-ble-manager",
 				{
-					"bluetoothAlwaysPermission": "to connect to to Bluetooth devices",
+					"bluetoothAlwaysPermission": "App requires Bluetooth access to connect to the OmniRing device.",
 					"isBleRequired": true,
 					"neverForLocation": true
 				}
