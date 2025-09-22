@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>omniring</string>
-          <string>com.xhl.omniRing</string>
+          <string>com.opencirqt.omniRing</string>
         </array>
       </dict>
     </array>
