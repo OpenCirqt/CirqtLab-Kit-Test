@@ -1,7 +1,7 @@
 {
 	"expo": {
-		"name": "omniRing",
-		"slug": "omniRing",
+		"name": "OmniRing",
+		"slug": "OmniRing",
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"icon": "./src/assets/images/icon.png",
@@ -10,7 +10,7 @@
 		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
-			"bundleIdentifier": "com.opencirqt.omniRing"
+			"bundleIdentifier": "com.opencirqt.omniring.app"
 		},
 		"android": {
 			"adaptiveIcon": {
@@ -25,7 +25,7 @@
 				"android.permission.BLUETOOTH_ADMIN",
 				"android.permission.BLUETOOTH_CONNECT"
 			],
-			"package": "com.opencirqt.omniRing"
+			"package": "com.opencirqt.omniring.app"
 		},
 		"web": {
 			"bundler": "metro",

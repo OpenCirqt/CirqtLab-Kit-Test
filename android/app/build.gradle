@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.opencirqt.omniRing'
+    namespace 'com.opencirqt.omniring.app'
     defaultConfig {
-        applicationId 'com.opencirqt.omniRing'
+        applicationId 'com.opencirqt.omniring.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
