@@ -19,10 +19,15 @@ import { LineChart, LineData, LineDataset } from "react-native-charts-wrapper";
 import ButtonUi from "../components/common/ButtonUi";
 import ModalUi from "../components/common/ModalUi";
 import NotificationUi from "../components/common/NotificationUi";
+import PermissionModalUi from "../components/common/PermissionModalUi";
 import TextUi from "../components/common/TextUi";
 import StatCard from "../components/dashboard/StatCard";
-import { clearPeripheral, setCollecting } from "../features/ble/bleSlice";
-import useAutoReconnect from "../hooks/useAutoReconnect";
+import {
+  clearPeripheral,
+  setAutoConnect,
+  setCollecting,
+} from "../features/ble/bleSlice";
+import useAppPermission from "../hooks/useAppPermission";
 import { useBleLiveStream } from "../hooks/useBleLiveStream";
 import { DashboardRootStackParamList } from "../navigations/DashboardNavigator";
 import { RootTabParamList } from "../navigations/TabNavigator";
@@ -115,8 +120,82 @@ const DashboardScreen = () => {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [doneMessage, setDoneMessage] = useState<string | undefined>(undefined);
 
-  // if a device has been previously connected, try connect it back first on app launch
-  useAutoReconnect();
+  // autoConnect
+  const hasTried = useRef(false);
+
+  const handleStopCollection = () => {
+    clearInterval(graphUpdateTimer.current!);
+    dispatch(setCollecting(false));
+  };
+
+  const disconnectDevice = async () => {
+    if (connectedDevice?.id) {
+      dispatch(clearPeripheral());
+      resetStates();
+      await BleManager.disconnect(connectedDevice.id, false);
+    }
+  };
+
+  const {
+    showModal,
+    setShowModal,
+    bluetoothState,
+    locationState,
+    handleOpenSettings,
+    checkStatus,
+  } = useAppPermission((enableScan) => {
+    if (enableScan) {
+      navigation.navigate("BluetoothConnection");
+    }
+  });
+
+  // if bluetooth or location (for android) dropped, stop data collection and disconnect device
+  useEffect(() => {
+    if (
+      (bluetoothState && bluetoothState !== "on") ||
+      (locationState && locationState !== "READY")
+    ) {
+      handleStopCollection();
+      disconnectDevice();
+    }
+
+    if (
+      bluetoothState === "on" &&
+      locationState === "READY" &&
+      connectedDevice?.id &&
+      !hasTried.current
+    ) {
+      const timeout = (ms: number) =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), ms)
+        );
+      hasTried.current = true;
+      dispatch(setAutoConnect(true));
+
+      const connect = (async () => {
+        await BleManager.connect(connectedDevice.id);
+      })();
+
+      const tryReconnect = async () => {
+        try {
+          await Promise.race([
+            connect,
+            timeout(5000), // 5 second timeout
+          ]);
+          console.info("[AutoConnect] Connected");
+        } catch (e) {
+          console.warn("[AutoConnect] Failed", e);
+          dispatch(clearPeripheral());
+          BleManager.disconnect(connectedDevice.id, false);
+        } finally {
+          dispatch(setAutoConnect(false));
+        }
+      };
+
+      tryReconnect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bluetoothState, locationState, dispatch, connectedDevice]);
 
   // subscribes to device data updates
   useBleLiveStream(
@@ -250,19 +329,6 @@ const DashboardScreen = () => {
     }
   };
 
-  const handleStopCollection = () => {
-    clearInterval(graphUpdateTimer.current!);
-    dispatch(setCollecting(false));
-  };
-
-  const disconnectDevice = async () => {
-    if (connectedDevice?.id) {
-      await BleManager.disconnect(connectedDevice.id);
-      dispatch(clearPeripheral());
-      resetStates();
-    }
-  };
-
   const disconnect = () => {
     if (cachedData.current.length > 0) {
       setVisible(true);
@@ -352,7 +418,7 @@ const DashboardScreen = () => {
             message="Device not connected. Connect a device to start."
             buttonText="Scan"
             onPress={() => {
-              navigation.navigate("BluetoothConnection");
+              checkStatus(true);
             }}
           />
         )}
@@ -524,6 +590,13 @@ const DashboardScreen = () => {
         }}
         status={status}
         doneMessage={doneMessage}
+      />
+      <PermissionModalUi
+        visible={showModal}
+        bleState={bluetoothState}
+        locationState={locationState}
+        onClose={() => setShowModal(false)}
+        onOpenSettings={() => handleOpenSettings()}
       />
     </View>
   );

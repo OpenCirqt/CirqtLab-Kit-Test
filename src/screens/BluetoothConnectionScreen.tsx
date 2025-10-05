@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Platform,
   SectionList,
   StyleSheet,
-  View,
+  View
 } from "react-native";
 import type { Peripheral } from "react-native-ble-manager";
 import BleManager from "react-native-ble-manager";
@@ -55,7 +54,7 @@ const BluetoothConnectionScreen = () => {
     return () => {
       discoverListener.remove();
       onStopScanListener.remove();
-      console.log("BLEDeviceSelectModal unmounted");
+      console.info("BLEDeviceSelectModal unmounted");
     };
   }, []);
 
@@ -112,19 +111,6 @@ const BluetoothConnectionScreen = () => {
       try {
         setConnectingId(device.id);
         await BleManager.connect(device.id);
-
-        // android only
-        if (Platform.OS === "android") {
-          console.debug(`${device.id}] createBond`);
-          try {
-            await BleManager.createBond(device.id);
-            console.debug(
-              `${device.id}] createBond success or there is already an existing one`
-            );
-          } catch (e) {
-            console.warn(`${device.id}] createBond failed:`, e);
-          }
-        }
 
         setConnectingId(null);
         dispatch(setPeripheral(device));

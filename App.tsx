@@ -1,7 +1,15 @@
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from "@expo-google-fonts/inter";
 import { NavigationContainer } from "@react-navigation/native";
 import React, { useEffect } from "react";
-import { Alert, PermissionsAndroid, Platform, StyleSheet } from "react-native";
+import {
+  StyleSheet
+} from "react-native";
 import BleManager from "react-native-ble-manager";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -20,42 +28,13 @@ function App() {
   });
 
   useEffect(() => {
-    initBLE();
+    BleManager.start({ showAlert: false });
   }, []);
-
-  const initBLE = async () => {
-    try {
-      if (Platform.OS === "android") {
-        const result = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE,
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        ]);
-        if (result) {
-          console.debug("User accepts Bluetooth permissions");
-        } else {
-          console.error("User refuses Bluetooth permissions");
-          Alert.alert(
-            "Accept Permissions",
-            "You have to accept Bluetooth permissions to use this app"
-          );
-          return;
-        }
-      }
-      await BleManager.start({ showAlert: true });
-      console.log("BLE started");
-    } catch (error) {
-      console.log(error);
-      Alert.alert("Error", "Cannot start BLE");
-    }
-  };
 
   if (!fontsLoaded) {
     return (
       <>
-        <TextUi tag='h4'>Loading fonts...</TextUi>
+        <TextUi tag="h4">Loading fonts...</TextUi>
       </>
     );
   }

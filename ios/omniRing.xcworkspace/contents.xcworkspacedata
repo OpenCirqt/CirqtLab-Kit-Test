@@ -2,12 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:omniRing.xcodeproj">
+      location = "group:OmniRing.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:OmniRing.xcodeproj">
    </FileRef>
 </Workspace>
