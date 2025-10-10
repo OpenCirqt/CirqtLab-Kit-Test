@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import BleManager from "react-native-ble-manager"; // note: the trailing slash is important!
 import { RxUUID, ServiceUUID } from "../utils/UUIDs";
 const Buffer = require("buffer/").Buffer;
@@ -10,11 +10,17 @@ export const useBleLiveStream = (
   onStart: (data: number) => void
 ) => {
   const listenerRef = useRef<any>(null);
-  const stableOnData = useCallback(onData, []);
-  const stableOnStart = useCallback(onStart, []);
 
   useEffect(() => {
-    if (!peripheralId || !collecting) return;
+    const stopNotification = async (peripheralId: string) => {
+      await BleManager.stopNotification(peripheralId, ServiceUUID, RxUUID);
+    }
+    if (!peripheralId || !collecting) {
+      if (peripheralId) {
+        stopNotification(peripheralId);
+      }
+      return;
+    }
 
     const setup = async () => {
       const charCallback = ({ value, peripheral, characteristic, service }) => {
@@ -29,14 +35,14 @@ export const useBleLiveStream = (
           const value = bytes.readFloatLE(i);
           floatArray.push(value);
         }
-        stableOnData(floatArray);
+        onData(floatArray);
       };
 
       try {
         await BleManager.retrieveServices(peripheralId);
         await BleManager.startNotification(peripheralId, ServiceUUID, RxUUID);
 
-        stableOnStart(Date.now());
+        onStart(Date.now());
 
         listenerRef.current =
           BleManager.onDidUpdateValueForCharacteristic(charCallback);
@@ -53,5 +59,6 @@ export const useBleLiveStream = (
         () => {}
       );
     };
-  }, [peripheralId, collecting, stableOnData, stableOnStart]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peripheralId, collecting]);
 };

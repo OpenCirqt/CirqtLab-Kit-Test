@@ -53,6 +53,17 @@ type PendingAction = "collection" | "disconnect" | null;
 
 const colors = [Colors.primary, Colors.red, Colors.blue];
 
+const emptyDataSet: LineDataset = {
+  label: "Empty",
+  values: [{ x: 0, y: 0 }],
+  config: {
+    color: processColor("transparent"),
+    drawValues: false,
+    drawCircles: false,
+    mode: "CUBIC_BEZIER",
+  },
+};
+
 const buildDataSets = (
   nestedData: number[][],
   dataType: DataTypes
@@ -92,7 +103,7 @@ const DashboardScreen = () => {
 
   // graph
   const cachedData = useRef<number[][]>([]);
-  const graphUpdateTimer = useRef<number | null>(null);
+  const graphUpdateTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // stats
   const graphComputeTimeRef = useRef<number>(0);
@@ -115,8 +126,8 @@ const DashboardScreen = () => {
   const isFocused = useIsFocused();
 
   // error handling/ save modal
-  const [visible, setVisible] = useState(false);
-  const [status, setStatus] = useState<Status>("idle");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalStatus, setModalStatus] = useState<Status>("idle");
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [doneMessage, setDoneMessage] = useState<string | undefined>(undefined);
 
@@ -124,7 +135,10 @@ const DashboardScreen = () => {
   const hasTried = useRef(false);
 
   const handleStopCollection = () => {
-    clearInterval(graphUpdateTimer.current!);
+    if (graphUpdateTimer.current != null) {
+      clearInterval(graphUpdateTimer.current);
+      graphUpdateTimer.current = null;
+    }
     dispatch(setCollecting(false));
   };
 
@@ -132,7 +146,8 @@ const DashboardScreen = () => {
     if (connectedDevice?.id) {
       dispatch(clearPeripheral());
       resetStates();
-      await BleManager.disconnect(connectedDevice.id, false);
+      graphUpdateTimer.current = null;
+      await BleManager.disconnect(connectedDevice.id);
     }
   };
 
@@ -165,28 +180,29 @@ const DashboardScreen = () => {
       connectedDevice?.id &&
       !hasTried.current
     ) {
-      const timeout = (ms: number) =>
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout")), ms)
-        );
       hasTried.current = true;
       dispatch(setAutoConnect(true));
 
-      const connect = (async () => {
-        await BleManager.connect(connectedDevice.id);
-      })();
-
       const tryReconnect = async () => {
         try {
-          await Promise.race([
-            connect,
-            timeout(5000), // 5 second timeout
-          ]);
+          let connected = false;
+          const timeout = setTimeout(async () => {
+            if (!connected) {
+              console.warn("[AutoConnect] Failed");
+              dispatch(clearPeripheral());
+            }
+            await BleManager.disconnect(connectedDevice.id);
+          }, 10000);
+
+          await BleManager.connect(connectedDevice.id);
+          connected = true;
+
+          clearTimeout(timeout);
           console.info("[AutoConnect] Connected");
         } catch (e) {
           console.warn("[AutoConnect] Failed", e);
           dispatch(clearPeripheral());
-          BleManager.disconnect(connectedDevice.id, false);
+          await BleManager.disconnect(connectedDevice.id);
         } finally {
           dispatch(setAutoConnect(false));
         }
@@ -216,22 +232,16 @@ const DashboardScreen = () => {
 
   useEffect(() => {
     if (isFocused && uploading) {
-      setVisible(true);
-      setStatus("uploading");
+      setModalVisible(true);
+      setModalStatus("uploading");
     } else {
-      setVisible(false);
-      setStatus("idle");
+      setModalVisible(false);
+      setModalStatus("idle");
     }
   }, [uploading, isFocused]);
 
   const setUpTimer = () => {
     dispatch(setCollecting(true));
-    resetStates();
-
-    // @ts-ignore
-    chart1Ref.current.fitScreen();
-    // @ts-ignore
-    chart2Ref.current.fitScreen();
 
     let threshold = 300;
     if (
@@ -244,17 +254,16 @@ const DashboardScreen = () => {
     graphUpdateTimer.current = setInterval(() => {
       const startTime = Date.now();
 
+      const dataSet = cachedData.current.slice(-threshold);
+
+      if (dataSet.length === 0) {
+        return;
+      }
       setChart1DataSet({
-        dataSets: buildDataSets(
-          cachedData.current.slice(-threshold),
-          selectedDataPoint1Ref.current
-        ),
+        dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current),
       });
       setChart2DataSet({
-        dataSets: buildDataSets(
-          cachedData.current.slice(-threshold),
-          selectedDataPoint2Ref.current
-        ),
+        dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current),
       });
 
       graphComputeTimeRef.current = Date.now() - startTime;
@@ -290,7 +299,7 @@ const DashboardScreen = () => {
 
   const saveCsvFile = async () => {
     try {
-      setStatus("saving");
+      setModalStatus("saving");
       const csvString = convertToCsv(cachedData.current);
 
       const now = Date.now();
@@ -314,15 +323,14 @@ const DashboardScreen = () => {
     } catch (err) {
       setDoneMessage(`Error: ${String(err)}`);
     } finally {
-      setStatus("done");
-      resetStates();
+      setModalStatus("done");
     }
   };
 
   const handleStartCollection = () => {
     if (cachedData.current.length > 0) {
-      setVisible(true);
-      setStatus("unsaved");
+      setModalVisible(true);
+      setModalStatus("unsaved");
       setPendingAction("collection");
     } else {
       setUpTimer();
@@ -331,8 +339,8 @@ const DashboardScreen = () => {
 
   const disconnect = () => {
     if (cachedData.current.length > 0) {
-      setVisible(true);
-      setStatus("unsaved");
+      setModalVisible(true);
+      setModalStatus("unsaved");
       setPendingAction("disconnect");
     } else {
       disconnectDevice();
@@ -340,9 +348,22 @@ const DashboardScreen = () => {
   };
 
   const resetStates = () => {
+    if (graphUpdateTimer.current !== null) {
+      clearInterval(graphUpdateTimer.current);
+    }
+
     cachedData.current = [];
-    setChart1DataSet({ dataSets: [] });
-    setChart2DataSet({ dataSets: [] });
+    // @ts-ignore
+    chart1Ref.current?.fitScreen();
+    // @ts-ignore
+    chart2Ref.current?.fitScreen();
+
+    setChart1DataSet({
+      dataSets: [emptyDataSet],
+    });
+    setChart2DataSet({
+      dataSets: [emptyDataSet],
+    });
     bufferUsedSizeRef.current = 0;
     graphComputeTimeRef.current = 0;
     elapsedStartRef.current = 0;
@@ -448,7 +469,7 @@ const DashboardScreen = () => {
             size="medium"
             customStyle={styles.dataPoint}
             onPress={() => {
-              setVisible(true);
+              setModalVisible(true);
 
               saveCsvFile();
             }}
@@ -518,7 +539,9 @@ const DashboardScreen = () => {
             maxVisibleValueCount={50}
             dragDecelerationEnabled={true}
             dragDecelerationFrictionCoef={0.99}
-            zoom={{ scaleX: 1.5, scaleY: 1, xValue: 0, yValue: 0 }}
+            zoom={{ scaleX: 1, scaleY: 1, xValue: 0, yValue: 0 }}
+            highlightPerTapEnabled={false}
+            highlightPerDragEnabled={false}
           />
         </View>
         <View style={styles.graphCard}>
@@ -546,28 +569,35 @@ const DashboardScreen = () => {
             maxVisibleValueCount={50}
             dragDecelerationEnabled={true}
             dragDecelerationFrictionCoef={0.99}
-            zoom={{ scaleX: 1.5, scaleY: 1, xValue: 0, yValue: 0 }}
+            zoom={{ scaleX: 1, scaleY: 1, xValue: 0, yValue: 0 }}
+            highlightPerTapEnabled={false}
+            highlightPerDragEnabled={false}
           />
         </View>
       </ScrollView>
       <ModalUi
-        visible={visible}
+        visible={modalVisible}
         onClose={() => {
-          setVisible(false);
-          setStatus("idle");
+          setModalStatus("idle");
+          setModalVisible(false);
 
           if (pendingAction === "collection") {
+            resetStates();
             setUpTimer();
           } else if (pendingAction === "disconnect") {
             disconnectDevice();
+          } else {
+            // after a direct save
+            resetStates();
           }
           setPendingAction(null);
         }}
         onContinue={() => {
-          setVisible(false);
-          setStatus("idle");
+          setModalStatus("idle");
+          setModalVisible(false);
 
           if (pendingAction === "collection") {
+            resetStates();
             setUpTimer();
           } else if (pendingAction === "disconnect") {
             disconnectDevice();
@@ -575,20 +605,20 @@ const DashboardScreen = () => {
           setPendingAction(null);
         }}
         onSave={() => {
-          if (!visible) {
-            setVisible(visible);
+          if (!modalVisible) {
+            setModalVisible(modalVisible);
           }
           saveCsvFile();
         }}
         onNavigate={() => {
-          setVisible(false);
-          setStatus("idle");
+          setModalVisible(false);
+          setModalStatus("idle");
 
           navigation.navigate("DFUTab", {
             screen: "DFU",
           });
         }}
-        status={status}
+        status={modalStatus}
         doneMessage={doneMessage}
       />
       <PermissionModalUi

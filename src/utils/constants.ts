@@ -26,4 +26,5 @@ export type Status =
   | "undeleted"
   | "deleting"
   | "collecting"
-  | "uploading";
+  | "uploading"
+  | "loading";

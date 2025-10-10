@@ -23,7 +23,8 @@
 				"android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE",
 				"android.permission.BLUETOOTH",
 				"android.permission.BLUETOOTH_ADMIN",
-				"android.permission.BLUETOOTH_CONNECT"
+				"android.permission.BLUETOOTH_CONNECT",
+        "android.permissions.ACCESS_FINE_LOCATION"
 			],
 			"package": "com.opencirqt.omniring.app"
 		},

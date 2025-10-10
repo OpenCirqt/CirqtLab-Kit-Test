@@ -28,7 +28,6 @@ const PermissionModalUi: React.FC<PermissionModalUiProps> = ({
   onClose,
   onOpenSettings,
 }) => {
-  console.log(visible);
   return (
     <Modal
       visible={visible}

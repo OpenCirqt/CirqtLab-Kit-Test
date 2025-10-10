@@ -19,6 +19,11 @@ const useAppPermission = (
 
       // If BLUETOOTH_SCAN and CONNECT exist, request them (Android 12+)
       if (BLUETOOTH_SCAN && BLUETOOTH_CONNECT) {
+        const scanStatus = await PermissionsAndroid.check(BLUETOOTH_SCAN);
+        const connectStatus = await PermissionsAndroid.check(BLUETOOTH_CONNECT);
+        if (scanStatus && connectStatus) {
+          return true;
+        }
         const granted = await PermissionsAndroid.requestMultiple([
           BLUETOOTH_SCAN,
           BLUETOOTH_CONNECT,

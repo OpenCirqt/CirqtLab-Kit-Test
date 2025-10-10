@@ -20,7 +20,7 @@
 		13B07F961A680F5B00A75B9A /* OmniRing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OmniRing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = OmniRing/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = OmniRing/Info.plist; sourceTree = "<group>"; };
-		20AB53957DFDBC962E9A084F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = OmniRing/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		20AB53957DFDBC962E9A084F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = OmniRing/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2B5FE5E6DE4BFA2FE64F7DCC /* libPods-OmniRing.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OmniRing.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8296D494F0B08F57EE05D889 /* Pods-OmniRing.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OmniRing.release.xcconfig"; path = "Target Support Files/Pods-OmniRing/Pods-OmniRing.release.xcconfig"; sourceTree = "<group>"; };
 		A27F15D340FF92EA76BEB7AC /* Pods-OmniRing.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OmniRing.debug.xcconfig"; path = "Target Support Files/Pods-OmniRing/Pods-OmniRing.debug.xcconfig"; sourceTree = "<group>"; };
@@ -72,7 +72,6 @@
 				A27F15D340FF92EA76BEB7AC /* Pods-OmniRing.debug.xcconfig */,
 				8296D494F0B08F57EE05D889 /* Pods-OmniRing.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -344,6 +343,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = OmniRing/OmniRing.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4UZRYSG2AZ;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -362,7 +362,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.opencirqt.omniring.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xhl.omniring.app;
 				PRODUCT_NAME = OmniRing;
 				SWIFT_OBJC_BRIDGING_HEADER = "OmniRing/OmniRing-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -380,6 +380,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = OmniRing/OmniRing.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4UZRYSG2AZ;
 				INFOPLIST_FILE = OmniRing/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -393,7 +394,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.opencirqt.omniring.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xhl.omniring.app;
 				PRODUCT_NAME = OmniRing;
 				SWIFT_OBJC_BRIDGING_HEADER = "OmniRing/OmniRing-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -457,10 +458,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -515,10 +513,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

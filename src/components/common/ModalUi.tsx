@@ -47,7 +47,7 @@ const ModalUi: React.FC<ModalUiProps> = ({
 
   // spinner animation
   useEffect(() => {
-    if (status === "saving") {
+    if (status === "saving" || status === "loading") {
       rotation.value = withRepeat(
         withTiming(360, { duration: 1000, easing: Easing.linear }),
         -1,
@@ -87,6 +87,14 @@ const ModalUi: React.FC<ModalUiProps> = ({
                 <Animated.View style={[styles.spinner, animatedStyle]} />
                 <TextUi tag="h4" weight="medium" style={styles.modalText}>
                   {status.charAt(0).toUpperCase() + status.slice(1)} data...
+                </TextUi>
+              </>
+            )}
+            {status === "loading" && (
+              <>
+                <Animated.View style={[styles.spinner, animatedStyle]} />
+                <TextUi tag="h4" weight="medium" style={styles.modalText}>
+                  Processing...
                 </TextUi>
               </>
             )}
