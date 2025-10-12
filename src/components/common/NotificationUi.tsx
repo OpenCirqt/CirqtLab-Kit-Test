@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    padding: px(8),
+    padding: px(6),
     marginBottom: px(8),
     borderRadius: px(10),
     shadowColor: "#000",

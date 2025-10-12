@@ -35,6 +35,7 @@ import { useAppDispatch, useAppSelector } from "../store";
 import { Colors } from "../theme";
 import { DataTypes, Status } from "../utils/constants";
 import { MaxBufferSize, SensorParameter } from "../utils/indexRange";
+import { AnalysisResult, PPGAnalyzer } from "../utils/ppgAnalyzer";
 import { px } from "../utils/setSize";
 
 type DashboardScreenProp = NativeStackNavigationProp<
@@ -53,6 +54,7 @@ type PendingAction = "collection" | "disconnect" | null;
 
 const colors = [Colors.primary, Colors.red, Colors.blue];
 
+// default dataset
 const emptyDataSet: LineDataset = {
   label: "Empty",
   values: [{ x: 0, y: 0 }],
@@ -64,6 +66,7 @@ const emptyDataSet: LineDataset = {
   },
 };
 
+// build graph datasets
 const buildDataSets = (
   nestedData: number[][],
   dataType: DataTypes
@@ -89,7 +92,11 @@ const buildDataSets = (
   });
 };
 
+// initialize PPG analyzer
+const analyzer = new PPGAnalyzer({ windowSec: 10 });
+
 const DashboardScreen = () => {
+  // from redux store
   const connectedDevice = useAppSelector((state) => state.ble.peripheral);
   const isAutoReconnect = useAppSelector((state) => state.ble.autoReconnect);
   const selectedDataPoints = useAppSelector(
@@ -134,6 +141,10 @@ const DashboardScreen = () => {
   // autoConnect
   const hasTried = useRef(false);
 
+  // ppg analyzer
+  const [ppgAnalysisResult, setPpgAnalysisResult] =
+    useState<AnalysisResult | null>(null);
+
   const handleStopCollection = () => {
     if (graphUpdateTimer.current != null) {
       clearInterval(graphUpdateTimer.current);
@@ -174,6 +185,8 @@ const DashboardScreen = () => {
       disconnectDevice();
     }
 
+    // try auto reconnect the cached BLE device
+    // give up if cannot connect within 10 secs
     if (
       bluetoothState === "on" &&
       locationState === "READY" &&
@@ -219,6 +232,12 @@ const DashboardScreen = () => {
     collecting,
     (data) => {
       cachedData.current.push(data as number[]);
+      analyzer.push({
+        ir: data[SensorParameter[DataTypes.PPG_IR][0]],
+        red: data[SensorParameter[DataTypes.PPG_RED][0]],
+        green: data[SensorParameter[DataTypes.PPG_GREEN][0]],
+        timestampMs: Date.now(),
+      });
     },
     (data) => {
       elapsedStartRef.current = data;
@@ -230,6 +249,7 @@ const DashboardScreen = () => {
     selectedDataPoint2Ref.current = selectedDataPoints[1];
   }, [selectedDataPoints]);
 
+  // cannot start data collection while conducting DFU
   useEffect(() => {
     if (isFocused && uploading) {
       setModalVisible(true);
@@ -259,6 +279,8 @@ const DashboardScreen = () => {
       if (dataSet.length === 0) {
         return;
       }
+
+      // update graph datasets
       setChart1DataSet({
         dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current),
       });
@@ -266,8 +288,10 @@ const DashboardScreen = () => {
         dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current),
       });
 
+      // update graph compute time
       graphComputeTimeRef.current = Date.now() - startTime;
 
+      // update elapsed time
       if (elapsedStartRef.current === 0) {
         elapsedTimeRef.current = 0;
       } else {
@@ -276,6 +300,7 @@ const DashboardScreen = () => {
           100;
       }
 
+      // update buffer used
       bufferUsedSizeRef.current =
         bufferUsedSizeRef.current +
         cachedData.current.length *
@@ -290,6 +315,10 @@ const DashboardScreen = () => {
         );
         dispatch(setCollecting(false));
       }
+
+      // conduct PPG analysis
+      const analysisResult = analyzer.analyze();
+      setPpgAnalysisResult(analysisResult);
     }, 300);
   };
 
@@ -327,6 +356,10 @@ const DashboardScreen = () => {
     }
   };
 
+  /**
+   * Show a dialog if there're unsaved data when trying to start a new data collection
+   * Otherwise, start timer directly
+   */
   const handleStartCollection = () => {
     if (cachedData.current.length > 0) {
       setModalVisible(true);
@@ -337,6 +370,10 @@ const DashboardScreen = () => {
     }
   };
 
+  /**
+   * Show a dialog if there're unsaved data when trying to disconnect BLE device
+   * Otherwise, disconnect device directly
+   */
   const disconnect = () => {
     if (cachedData.current.length > 0) {
       setModalVisible(true);
@@ -348,16 +385,24 @@ const DashboardScreen = () => {
   };
 
   const resetStates = () => {
+    // clear graph timer
     if (graphUpdateTimer.current !== null) {
       clearInterval(graphUpdateTimer.current);
     }
 
+    // clear BLE emitted data
     cachedData.current = [];
+
+    // clear and reset PPG analysis
+    setPpgAnalysisResult(null);
+    analyzer.reset();
+
     // @ts-ignore
     chart1Ref.current?.fitScreen();
     // @ts-ignore
     chart2Ref.current?.fitScreen();
 
+    // clear graph data and stats
     setChart1DataSet({
       dataSets: [emptyDataSet],
     });
@@ -370,6 +415,11 @@ const DashboardScreen = () => {
     elapsedTimeRef.current = 0;
   };
 
+  /**
+   * Displays the last reading of BLE data
+   * @param dataType - supported BLE data types
+   * @returns JSX
+   */
   const generateLastReading = (dataType: DataTypes) => {
     if (cachedData.current.length === 0) {
       return;
@@ -388,6 +438,11 @@ const DashboardScreen = () => {
     ));
   };
 
+  /**
+   * Generates graph header
+   * @param dataType - supported BLE data types
+   * @returns JSX
+   */
   const generateGraphHeader = (dataType: DataTypes) => {
     return (
       <View style={styles.graphCardHeaderContainer}>
@@ -495,9 +550,8 @@ const DashboardScreen = () => {
               decimal={2}
               unit="s"
               style={styles.statCard}
+              timeConversion={true}
             />
-          </View>
-          <View style={styles.statCardRow}>
             <StatCard
               title="Buffer Used"
               value={bufferUsedSizeRef.current / 1024 / 1024}
@@ -505,11 +559,27 @@ const DashboardScreen = () => {
               unit="MB"
               style={styles.statCard}
             />
+          </View>
+          <View style={styles.statCardRow}>
             <StatCard
               title="Windows Fs"
               value={cachedData.current.length / elapsedTimeRef.current || 0}
               decimal={2}
               unit="Hz"
+              style={styles.statCard}
+            />
+            <StatCard
+              title="Heart Rate"
+              value={ppgAnalysisResult?.hr.bpm}
+              decimal={2}
+              unit="bpm"
+              style={styles.statCard}
+            />
+            <StatCard
+              title="SpO2"
+              value={ppgAnalysisResult?.spo2.spo2}
+              decimal={2}
+              unit="%"
               style={styles.statCard}
             />
           </View>
@@ -636,7 +706,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.lightGray,
-    padding: px(30),
+    paddingVertical: px(16),
+    paddingHorizontal: px(24),
   },
   contentContainerStyle: {
     paddingBottom: px(60),
@@ -680,7 +751,7 @@ const styles = StyleSheet.create({
   },
   statCardRow: {
     flexDirection: "row",
-    gap: px(20),
+    gap: px(16),
     marginVertical: px(8),
   },
   statCard: {
