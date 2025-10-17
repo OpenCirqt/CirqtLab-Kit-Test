@@ -11,6 +11,8 @@ import ButtonUi from "../components/common/ButtonUi";
 import TextUi from "../components/common/TextUi";
 import DeviceCard from "../components/dashboard/DeviceCard";
 import { setPeripheral } from "../features/ble/bleSlice";
+import { useBatteryMonitor } from "../hooks/useBatteryMonitor";
+import { useDeviceInfo } from "../hooks/useDeviceInfo";
 import { useAppDispatch, useAppSelector } from "../store";
 import { Colors } from "../theme";
 import { fs, px } from "../utils/setSize";
@@ -21,6 +23,13 @@ const BluetoothConnectionScreen = () => {
   const [isScanning, setIsScanning] = useState<boolean>(true);
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const connectedPeripheral = useAppSelector((state) => state.ble.peripheral);
+  const batteryLevel = useAppSelector((state) => state.ble.batteryLevel);
+  const batteryPowerState = useAppSelector((state) => state.ble.batteryPowerState);
+  const deviceInformation = useAppSelector((state) => state.ble.deviceInformation);
+
+  // Monitor battery level and device information for connected device
+  useBatteryMonitor(connectedPeripheral?.id ?? null, !!connectedPeripheral);
+  useDeviceInfo(connectedPeripheral?.id ?? null, !!connectedPeripheral);
 
   const connectedDevices = connectedPeripheral ? [connectedPeripheral] : [];
 
@@ -135,6 +144,9 @@ const BluetoothConnectionScreen = () => {
               peripheral={item}
               loading={isLoading}
               connected={isConnected}
+              batteryLevel={isConnected ? batteryLevel : null}
+              batteryPowerState={isConnected ? batteryPowerState : null}
+              deviceInformation={isConnected ? deviceInformation : null}
               onPress={() => connectToDevice(item)}
             />
           );
