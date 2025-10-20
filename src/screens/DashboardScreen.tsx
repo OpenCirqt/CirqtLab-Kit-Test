@@ -34,6 +34,8 @@ import { RootTabParamList } from "../navigations/TabNavigator";
 import { useAppDispatch, useAppSelector } from "../store";
 import { Colors } from "../theme";
 import { DataTypes, Status } from "../utils/constants";
+import { defaultFFTConfig, FFTConfig, FFTPresets } from "../utils/fftConfig";
+import { transformToFrequencyDomain } from "../utils/fftUtils";
 import { MaxBufferSize, SensorParameter } from "../utils/indexRange";
 import { AnalysisResult, PPGAnalyzer } from "../utils/ppgAnalyzer";
 import { px } from "../utils/setSize";
@@ -69,9 +71,32 @@ const emptyDataSet: LineDataset = {
 // build graph datasets
 const buildDataSets = (
   nestedData: number[][],
-  dataType: DataTypes
+  dataType: DataTypes,
+  fftEnabled: boolean = false,
+  fftConfig: FFTConfig = defaultFFTConfig
 ): LineDataset[] => {
   const keepIndices = SensorParameter[dataType];
+  
+  if (fftEnabled) {
+    // FFT mode - transform to frequency domain
+    return keepIndices.map((colIndex, lineIndex) => {
+      const values = transformToFrequencyDomain(nestedData, colIndex, fftConfig);
+
+      return {
+        values,
+        label: `FFT Line ${colIndex}`,
+        config: {
+          color: processColor(colors[lineIndex % colors.length]) as number,
+          drawValues: false,
+          lineWidth: 1,
+          drawCircles: false,
+          mode: "CUBIC_BEZIER",
+        },
+      };
+    });
+  }
+  
+  // Time domain mode (original)
   return keepIndices.map((colIndex, lineIndex) => {
     const values: ChartValue[] = nestedData.map((row, x) => ({
       x, // row index = x
@@ -144,6 +169,73 @@ const DashboardScreen = () => {
   // ppg analyzer
   const [ppgAnalysisResult, setPpgAnalysisResult] =
     useState<AnalysisResult | null>(null);
+
+  // FFT state - only available after collection stops
+  const [fftEnabled, setFftEnabled] = useState(false);
+  const [fftConfig, setFftConfig] = useState<FFTConfig>(defaultFFTConfig);
+
+  // Calculate actual sampling rate from collected data (Windows Fs)
+  const getActualSamplingRate = (): number => {
+    if (elapsedTimeRef.current > 0 && cachedData.current.length > 0) {
+      return cachedData.current.length / elapsedTimeRef.current;
+    }
+    return 100; // fallback default
+  };
+
+  // Get appropriate FFT preset based on data type
+  const getFFTPresetForDataType = (dataType: DataTypes): FFTConfig => {
+    if (dataType.includes("ppg")) {
+      return FFTPresets.ppgAnalysis;
+    } else if (dataType.includes("acc")) {
+      return FFTPresets.accelerometerAnalysis;
+    }
+    return FFTPresets.balanced;
+  };
+
+  // When FFT is toggled, recompute the graph datasets
+  useEffect(() => {
+    if (!collecting && cachedData.current.length > 0) {
+      // Get the full dataset or a reasonable window
+      const threshold = fftEnabled ? cachedData.current.length : Math.min(cachedData.current.length, 1000);
+      const dataSet = cachedData.current.slice(-threshold);
+
+      // Use actual sampling rate from collected data (Windows Fs)
+      const actualSamplingRate = getActualSamplingRate();
+
+      // Get presets and update with actual sampling rate
+      const fftConfig1 = {
+        ...getFFTPresetForDataType(selectedDataPoint1Ref.current),
+        samplingRate: actualSamplingRate,
+        maxFrequency: Math.min(
+          getFFTPresetForDataType(selectedDataPoint1Ref.current).maxFrequency,
+          actualSamplingRate / 2 // Nyquist limit
+        ),
+      };
+      
+      const fftConfig2 = {
+        ...getFFTPresetForDataType(selectedDataPoint2Ref.current),
+        samplingRate: actualSamplingRate,
+        maxFrequency: Math.min(
+          getFFTPresetForDataType(selectedDataPoint2Ref.current).maxFrequency,
+          actualSamplingRate / 2 // Nyquist limit
+        ),
+      };
+
+      setChart1DataSet({
+        dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current, fftEnabled, fftConfig1),
+      });
+      setChart2DataSet({
+        dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current, fftEnabled, fftConfig2),
+      });
+    }
+  }, [fftEnabled, collecting]);
+
+  // Disable FFT mode when collection starts
+  useEffect(() => {
+    if (collecting && fftEnabled) {
+      setFftEnabled(false);
+    }
+  }, [collecting, fftEnabled]);
 
   const handleStopCollection = () => {
     if (graphUpdateTimer.current != null) {
@@ -280,12 +372,12 @@ const DashboardScreen = () => {
         return;
       }
 
-      // update graph datasets
+      // update graph datasets (always in time domain during collection)
       setChart1DataSet({
-        dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current),
+        dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current, false, defaultFFTConfig),
       });
       setChart2DataSet({
-        dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current),
+        dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current, false, defaultFFTConfig),
       });
 
       // update graph compute time
@@ -316,7 +408,7 @@ const DashboardScreen = () => {
         dispatch(setCollecting(false));
       }
 
-      // conduct PPG analysis
+      // conduct PPG analysis (always during collection)
       const analysisResult = analyzer.analyze();
       setPpgAnalysisResult(analysisResult);
     }, 300);
@@ -397,6 +489,9 @@ const DashboardScreen = () => {
     setPpgAnalysisResult(null);
     analyzer.reset();
 
+    // reset FFT mode
+    setFftEnabled(false);
+
     // @ts-ignore
     chart1Ref.current?.fitScreen();
     // @ts-ignore
@@ -443,11 +538,11 @@ const DashboardScreen = () => {
    * @param dataType - supported BLE data types
    * @returns JSX
    */
-  const generateGraphHeader = (dataType: DataTypes) => {
+  const generateGraphHeader = (dataType: DataTypes, fftEnabled: boolean) => {
     return (
       <View style={styles.graphCardHeaderContainer}>
         <TextUi tag="h2" weight="bold" style={styles.graphHeader}>
-          {dataType.toUpperCase()}
+          {dataType.toUpperCase()} {fftEnabled ? "(FFT)" : "(Time Domain)"}
         </TextUi>
         {cachedData.current.length > 1 && (
           <View style={styles.graphLastReadingContainer}>
@@ -532,6 +627,24 @@ const DashboardScreen = () => {
             Save Data
           </ButtonUi>
         </View>
+        <View style={styles.collectionButton}>
+          <ButtonUi
+            type={
+              collecting || cachedData.current.length === 0
+                ? "disabled"
+                : fftEnabled
+                ? "primary"
+                : "secondary"
+            }
+            size="medium"
+            customStyle={{ flex: 1 }}
+            onPress={() => {
+              setFftEnabled(!fftEnabled);
+            }}
+          >
+            {fftEnabled ? "Time Domain" : "Frequency Domain (FFT)"}
+          </ButtonUi>
+        </View>
         <View style={styles.statContainer}>
           <TextUi tag="h2" weight="bold">
             Stats
@@ -585,7 +698,7 @@ const DashboardScreen = () => {
           </View>
         </View>
         <View style={styles.graphCard}>
-          {generateGraphHeader(selectedDataPoints[0])}
+          {generateGraphHeader(selectedDataPoints[0], fftEnabled)}
           <LineChart
             style={{ flex: 1 }}
             ref={chart1Ref}
@@ -606,7 +719,7 @@ const DashboardScreen = () => {
               right: { enabled: false },
             }}
             legend={{ enabled: false }}
-            maxVisibleValueCount={50}
+            maxVisibleValueCount={fftEnabled ? 500 : 50}
             dragDecelerationEnabled={true}
             dragDecelerationFrictionCoef={0.99}
             zoom={{ scaleX: 1, scaleY: 1, xValue: 0, yValue: 0 }}
@@ -615,7 +728,7 @@ const DashboardScreen = () => {
           />
         </View>
         <View style={styles.graphCard}>
-          {generateGraphHeader(selectedDataPoints[1])}
+          {generateGraphHeader(selectedDataPoints[1], fftEnabled)}
           <LineChart
             style={{ flex: 1 }}
             ref={chart2Ref}
@@ -636,7 +749,7 @@ const DashboardScreen = () => {
               right: { enabled: false },
             }}
             legend={{ enabled: false }}
-            maxVisibleValueCount={50}
+            maxVisibleValueCount={fftEnabled ? 500 : 50}
             dragDecelerationEnabled={true}
             dragDecelerationFrictionCoef={0.99}
             zoom={{ scaleX: 1, scaleY: 1, xValue: 0, yValue: 0 }}
