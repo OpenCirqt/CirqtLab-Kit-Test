@@ -5,6 +5,7 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -20,6 +21,7 @@ import ButtonUi from "../components/common/ButtonUi";
 import ModalUi from "../components/common/ModalUi";
 import NotificationUi from "../components/common/NotificationUi";
 import PermissionModalUi from "../components/common/PermissionModalUi";
+import PPGWarningModal from "../components/common/PPGWarningModal";
 import TextUi from "../components/common/TextUi";
 import StatCard from "../components/dashboard/StatCard";
 import {
@@ -170,9 +172,65 @@ const DashboardScreen = () => {
   const [ppgAnalysisResult, setPpgAnalysisResult] =
     useState<AnalysisResult | null>(null);
 
+  // PPG unlock state
+  const [ppgUnlocked, setPpgUnlocked] = useState(false);
+  const [showPPGWarning, setShowPPGWarning] = useState(false);
+
   // FFT state - only available after collection stops
   const [fftEnabled, setFftEnabled] = useState(false);
   const [fftConfig, setFftConfig] = useState<FFTConfig>(defaultFFTConfig);
+
+  // Load PPG unlock state from AsyncStorage on mount
+  useEffect(() => {
+    const loadPPGUnlockState = async () => {
+      try {
+        const unlocked = await AsyncStorage.getItem("ppgUnlocked");
+        if (unlocked === "true") {
+          setPpgUnlocked(true);
+        }
+      } catch (error) {
+        console.error("Failed to load PPG unlock state:", error);
+      }
+    };
+    loadPPGUnlockState();
+  }, []);
+
+  // Handle PPG unlock request
+  const handlePPGUnlock = () => {
+    setShowPPGWarning(true);
+  };
+
+  // Handle PPG warning acceptance
+  const handlePPGWarningAccept = async () => {
+    try {
+      await AsyncStorage.setItem("ppgUnlocked", "true");
+      setPpgUnlocked(true);
+      setShowPPGWarning(false);
+    } catch (error) {
+      console.error("Failed to save PPG unlock state:", error);
+    }
+  };
+
+  // Handle PPG warning cancel
+  const handlePPGWarningCancel = () => {
+    setShowPPGWarning(false);
+  };
+
+  // Handle PPG re-lock
+  const handlePPGLock = async () => {
+    try {
+      await AsyncStorage.removeItem("ppgUnlocked");
+      setPpgUnlocked(false);
+      setPpgAnalysisResult(null);
+      Alert.alert(
+        "PPG Locked",
+        "Heart Rate and SpO2 readings have been locked. Tap to unlock again.",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Failed to lock PPG:", error);
+    }
+  };
 
   // Calculate actual sampling rate from collected data (Windows Fs)
   const getActualSamplingRate = (): number => {
@@ -408,9 +466,11 @@ const DashboardScreen = () => {
         dispatch(setCollecting(false));
       }
 
-      // conduct PPG analysis (always during collection)
-      const analysisResult = analyzer.analyze();
-      setPpgAnalysisResult(analysisResult);
+      // conduct PPG analysis (only if unlocked)
+      if (ppgUnlocked) {
+        const analysisResult = analyzer.analyze();
+        setPpgAnalysisResult(analysisResult);
+      }
     }, 300);
   };
 
@@ -683,17 +743,23 @@ const DashboardScreen = () => {
             />
             <StatCard
               title="Heart Rate"
-              value={ppgAnalysisResult?.hr.bpm}
+              value={ppgUnlocked ? ppgAnalysisResult?.hr.bpm : undefined}
               decimal={2}
               unit="bpm"
               style={styles.statCard}
+              locked={!ppgUnlocked}
+              onUnlock={handlePPGUnlock}
+              onLock={handlePPGLock}
             />
             <StatCard
               title="SpO2"
-              value={ppgAnalysisResult?.spo2.spo2}
+              value={ppgUnlocked ? ppgAnalysisResult?.spo2.spo2 : undefined}
               decimal={2}
               unit="%"
               style={styles.statCard}
+              locked={!ppgUnlocked}
+              onUnlock={handlePPGUnlock}
+              onLock={handlePPGLock}
             />
           </View>
         </View>
@@ -810,6 +876,11 @@ const DashboardScreen = () => {
         locationState={locationState}
         onClose={() => setShowModal(false)}
         onOpenSettings={() => handleOpenSettings()}
+      />
+      <PPGWarningModal
+        visible={showPPGWarning}
+        onAccept={handlePPGWarningAccept}
+        onCancel={handlePPGWarningCancel}
       />
     </View>
   );

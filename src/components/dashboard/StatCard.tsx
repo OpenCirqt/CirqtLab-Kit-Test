@@ -1,7 +1,8 @@
 import { Colors } from "@/src/theme";
 import { px } from "@/src/utils/setSize";
 import React from "react";
-import { StyleSheet, View, ViewStyle } from "react-native";
+import { StyleSheet, View, ViewStyle, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import TextUi from "../common/TextUi";
 
 interface StatCardProps {
@@ -11,6 +12,9 @@ interface StatCardProps {
   style?: ViewStyle;
   decimal?: number;
   timeConversion?: boolean;
+  locked?: boolean;
+  onUnlock?: () => void;
+  onLock?: () => void;
 }
 
 interface TimePart {
@@ -76,8 +80,25 @@ const generateStatCardDisplay = (
   value?: number | null,
   decimal?: number,
   unit?: string,
-  timeConversion?: boolean
+  timeConversion?: boolean,
+  locked?: boolean,
+  onUnlock?: () => void
 ) => {
+  if (locked) {
+    return (
+      <TouchableOpacity
+        style={styles.lockedContainer}
+        onPress={onUnlock}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="lock-closed" size={32} color={Colors.infoTitleText} />
+        <TextUi tag="h6" weight="medium" style={styles.lockedText}>
+          Tap to unlock
+        </TextUi>
+      </TouchableOpacity>
+    );
+  }
+
   let content: React.ReactNode;
 
   if (timeConversion) {
@@ -129,13 +150,28 @@ const StatCard: React.FC<StatCardProps> = ({
   style,
   decimal,
   timeConversion,
+  locked,
+  onUnlock,
+  onLock,
 }) => {
+  const content = generateStatCardDisplay(value, decimal, unit, timeConversion, locked, onUnlock);
+
   return (
     <View style={[style, styles.statCardContainer]}>
       <TextUi tag="h6" weight="medium" style={styles.statHeader}>
         {title}
       </TextUi>
-      {generateStatCardDisplay(value, decimal, unit, timeConversion)}
+      {!locked && onLock ? (
+        <TouchableOpacity
+          onLongPress={onLock}
+          activeOpacity={1}
+          delayLongPress={800}
+        >
+          {content}
+        </TouchableOpacity>
+      ) : (
+        content
+      )}
     </View>
   );
 };
@@ -158,6 +194,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: px(4),
     alignItems: "baseline",
+  },
+  lockedContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: px(8),
+  },
+  lockedText: {
+    color: Colors.infoTitleText,
+    marginTop: px(4),
   },
 });
 
