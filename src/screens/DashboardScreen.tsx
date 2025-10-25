@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import {
   CompositeNavigationProp,
@@ -5,14 +6,15 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Platform,
   processColor,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import BleManager from "react-native-ble-manager";
@@ -23,7 +25,7 @@ import NotificationUi from "../components/common/NotificationUi";
 import PermissionModalUi from "../components/common/PermissionModalUi";
 import PPGWarningModal from "../components/common/PPGWarningModal";
 import TextUi from "../components/common/TextUi";
-import StatCard from "../components/dashboard/StatCard";
+import StatCard, { StatCardProps } from "../components/dashboard/StatCard";
 import {
   clearPeripheral,
   setAutoConnect,
@@ -78,11 +80,15 @@ const buildDataSets = (
   fftConfig: FFTConfig = defaultFFTConfig
 ): LineDataset[] => {
   const keepIndices = SensorParameter[dataType];
-  
+
   if (fftEnabled) {
     // FFT mode - transform to frequency domain
     return keepIndices.map((colIndex, lineIndex) => {
-      const values = transformToFrequencyDomain(nestedData, colIndex, fftConfig);
+      const values = transformToFrequencyDomain(
+        nestedData,
+        colIndex,
+        fftConfig
+      );
 
       return {
         values,
@@ -97,7 +103,7 @@ const buildDataSets = (
       };
     });
   }
-  
+
   // Time domain mode (original)
   return keepIndices.map((colIndex, lineIndex) => {
     const values: ChartValue[] = nestedData.map((row, x) => ({
@@ -120,7 +126,10 @@ const buildDataSets = (
 };
 
 // initialize PPG analyzer
-const analyzer = new PPGAnalyzer({ windowSec: 10 });
+let ppgAnalyzer: PPGAnalyzer | undefined = undefined;
+if (Platform.OS === "android") {
+  ppgAnalyzer = new PPGAnalyzer({ windowSec: 10 });
+}
 
 const DashboardScreen = () => {
   // from redux store
@@ -173,7 +182,7 @@ const DashboardScreen = () => {
     useState<AnalysisResult | null>(null);
 
   // PPG unlock state
-  const [ppgUnlocked, setPpgUnlocked] = useState(false);
+  const ppgUnlocked = useRef<boolean>(false);
   const [showPPGWarning, setShowPPGWarning] = useState(false);
 
   // FFT state - only available after collection stops
@@ -186,7 +195,7 @@ const DashboardScreen = () => {
       try {
         const unlocked = await AsyncStorage.getItem("ppgUnlocked");
         if (unlocked === "true") {
-          setPpgUnlocked(true);
+          ppgUnlocked.current = true;
         }
       } catch (error) {
         console.error("Failed to load PPG unlock state:", error);
@@ -204,7 +213,7 @@ const DashboardScreen = () => {
   const handlePPGWarningAccept = async () => {
     try {
       await AsyncStorage.setItem("ppgUnlocked", "true");
-      setPpgUnlocked(true);
+      ppgUnlocked.current = true;
       setShowPPGWarning(false);
     } catch (error) {
       console.error("Failed to save PPG unlock state:", error);
@@ -220,7 +229,7 @@ const DashboardScreen = () => {
   const handlePPGLock = async () => {
     try {
       await AsyncStorage.removeItem("ppgUnlocked");
-      setPpgUnlocked(false);
+      ppgUnlocked.current = false;
       setPpgAnalysisResult(null);
       Alert.alert(
         "PPG Locked",
@@ -254,7 +263,9 @@ const DashboardScreen = () => {
   useEffect(() => {
     if (!collecting && cachedData.current.length > 0) {
       // Get the full dataset or a reasonable window
-      const threshold = fftEnabled ? cachedData.current.length : Math.min(cachedData.current.length, 1000);
+      const threshold = fftEnabled
+        ? cachedData.current.length
+        : Math.min(cachedData.current.length, 1000);
       const dataSet = cachedData.current.slice(-threshold);
 
       // Use actual sampling rate from collected data (Windows Fs)
@@ -269,7 +280,7 @@ const DashboardScreen = () => {
           actualSamplingRate / 2 // Nyquist limit
         ),
       };
-      
+
       const fftConfig2 = {
         ...getFFTPresetForDataType(selectedDataPoint2Ref.current),
         samplingRate: actualSamplingRate,
@@ -280,10 +291,20 @@ const DashboardScreen = () => {
       };
 
       setChart1DataSet({
-        dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current, fftEnabled, fftConfig1),
+        dataSets: buildDataSets(
+          dataSet,
+          selectedDataPoint1Ref.current,
+          fftEnabled,
+          fftConfig1
+        ),
       });
       setChart2DataSet({
-        dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current, fftEnabled, fftConfig2),
+        dataSets: buildDataSets(
+          dataSet,
+          selectedDataPoint2Ref.current,
+          fftEnabled,
+          fftConfig2
+        ),
       });
     }
   }, [fftEnabled, collecting]);
@@ -382,7 +403,7 @@ const DashboardScreen = () => {
     collecting,
     (data) => {
       cachedData.current.push(data as number[]);
-      analyzer.push({
+      ppgAnalyzer?.push({
         ir: data[SensorParameter[DataTypes.PPG_IR][0]],
         red: data[SensorParameter[DataTypes.PPG_RED][0]],
         green: data[SensorParameter[DataTypes.PPG_GREEN][0]],
@@ -432,10 +453,20 @@ const DashboardScreen = () => {
 
       // update graph datasets (always in time domain during collection)
       setChart1DataSet({
-        dataSets: buildDataSets(dataSet, selectedDataPoint1Ref.current, false, defaultFFTConfig),
+        dataSets: buildDataSets(
+          dataSet,
+          selectedDataPoint1Ref.current,
+          false,
+          defaultFFTConfig
+        ),
       });
       setChart2DataSet({
-        dataSets: buildDataSets(dataSet, selectedDataPoint2Ref.current, false, defaultFFTConfig),
+        dataSets: buildDataSets(
+          dataSet,
+          selectedDataPoint2Ref.current,
+          false,
+          defaultFFTConfig
+        ),
       });
 
       // update graph compute time
@@ -467,8 +498,8 @@ const DashboardScreen = () => {
       }
 
       // conduct PPG analysis (only if unlocked)
-      if (ppgUnlocked) {
-        const analysisResult = analyzer.analyze();
+      if (ppgUnlocked.current && ppgAnalyzer) {
+        const analysisResult = ppgAnalyzer.analyze();
         setPpgAnalysisResult(analysisResult);
       }
     }, 300);
@@ -547,7 +578,7 @@ const DashboardScreen = () => {
 
     // clear and reset PPG analysis
     setPpgAnalysisResult(null);
-    analyzer.reset();
+    ppgAnalyzer?.reset();
 
     // reset FFT mode
     setFftEnabled(false);
@@ -602,7 +633,10 @@ const DashboardScreen = () => {
     return (
       <View style={styles.graphCardHeaderContainer}>
         <TextUi tag="h2" weight="bold" style={styles.graphHeader}>
-          {dataType.toUpperCase()} {fftEnabled ? "(FFT)" : "(Time Domain)"}
+          {dataType.toUpperCase()} 
+          <TextUi tag="h3" weight="bold" style={styles.graphHeader}>
+            {fftEnabled ? " (FFT)" : " (Time Domain)"}
+          </TextUi>
         </TextUi>
         {cachedData.current.length > 1 && (
           <View style={styles.graphLastReadingContainer}>
@@ -614,6 +648,88 @@ const DashboardScreen = () => {
             </View>
           </View>
         )}
+      </View>
+    );
+  };
+
+  const { width } = useWindowDimensions();
+
+  /**
+   * Generates Stat Cards
+   * NOTE: Hide heart rate and SpO2 for now
+   */
+  const generateStatCards = () => {
+    const statCardPropsList: StatCardProps[] = [
+      {
+        title: "Graph Compute Time",
+        value: graphComputeTimeRef.current,
+        decimal: 2,
+        unit: "ms",
+      },
+      {
+        title: "Elpased Time",
+        value: elapsedTimeRef.current,
+        decimal: 2,
+        unit: "s",
+        timeConversion: true,
+      },
+      {
+        title: "Buffer Used",
+        value: bufferUsedSizeRef.current / 1024 / 1024,
+        decimal: 2,
+        unit: "MB",
+      },
+      {
+        title: "Windows Fs",
+        value: cachedData.current.length / elapsedTimeRef.current || 0,
+        decimal: 2,
+        unit: "Hz",
+      },
+    ];
+
+    if (Platform.OS === "android") {
+      statCardPropsList.push({
+        title: "Heart Rate",
+        value: ppgUnlocked.current ? ppgAnalysisResult?.hr.bpm : undefined,
+        decimal: 2,
+        unit: "bpm",
+        locked: !ppgUnlocked.current,
+        onUnlock: handlePPGUnlock,
+        onLock: handlePPGLock,
+      });
+      statCardPropsList.push({
+        title: "SpO2",
+        value: ppgUnlocked.current ? ppgAnalysisResult?.spo2.spo2 : undefined,
+        decimal: 2,
+        unit: "%",
+        locked: !ppgUnlocked.current,
+        onUnlock: handlePPGUnlock,
+        onLock: handlePPGLock,
+      });
+    }
+
+    const itemsPerRow = statCardPropsList.length <= 4 ? 2 : 3;
+    const itemWidth =
+      (width - px(50) - (itemsPerRow - 1) * px(16)) / itemsPerRow;
+
+    return (
+      <View style={styles.statCardContainer}>
+        {statCardPropsList.map((item, index) => (
+          <StatCard
+            key={"stat" + index}
+            title={item.title}
+            value={item.value}
+            decimal={item.decimal}
+            unit={item.unit}
+            locked={item.locked}
+            onUnlock={item.onUnlock}
+            onLock={item.onLock}
+            timeConversion={item.timeConversion}
+            style={{
+              width: itemWidth,
+            }}
+          />
+        ))}
       </View>
     );
   };
@@ -657,7 +773,7 @@ const DashboardScreen = () => {
           <ButtonUi
             type={connectedDevice?.id ? "primary" : "disabled"}
             size="medium"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => {
               if (collecting) {
                 handleStopCollection();
@@ -677,7 +793,7 @@ const DashboardScreen = () => {
                 : "secondary"
             }
             size="medium"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => {
               setModalVisible(true);
 
@@ -697,7 +813,7 @@ const DashboardScreen = () => {
                 : "secondary"
             }
             size="medium"
-            customStyle={{ flex: 1 }}
+            style={{ flex: 1 }}
             onPress={() => {
               setFftEnabled(!fftEnabled);
             }}
@@ -709,59 +825,7 @@ const DashboardScreen = () => {
           <TextUi tag="h2" weight="bold">
             Stats
           </TextUi>
-          <View style={styles.statCardRow}>
-            <StatCard
-              title="Graph Compute Time"
-              value={graphComputeTimeRef.current}
-              decimal={2}
-              unit="ms"
-              style={styles.statCard}
-            />
-            <StatCard
-              title="Elapsed Time"
-              value={elapsedTimeRef.current}
-              decimal={2}
-              unit="s"
-              style={styles.statCard}
-              timeConversion={true}
-            />
-            <StatCard
-              title="Buffer Used"
-              value={bufferUsedSizeRef.current / 1024 / 1024}
-              decimal={2}
-              unit="MB"
-              style={styles.statCard}
-            />
-          </View>
-          <View style={styles.statCardRow}>
-            <StatCard
-              title="Windows Fs"
-              value={cachedData.current.length / elapsedTimeRef.current || 0}
-              decimal={2}
-              unit="Hz"
-              style={styles.statCard}
-            />
-            <StatCard
-              title="Heart Rate"
-              value={ppgUnlocked ? ppgAnalysisResult?.hr.bpm : undefined}
-              decimal={2}
-              unit="bpm"
-              style={styles.statCard}
-              locked={!ppgUnlocked}
-              onUnlock={handlePPGUnlock}
-              onLock={handlePPGLock}
-            />
-            <StatCard
-              title="SpO2"
-              value={ppgUnlocked ? ppgAnalysisResult?.spo2.spo2 : undefined}
-              decimal={2}
-              unit="%"
-              style={styles.statCard}
-              locked={!ppgUnlocked}
-              onUnlock={handlePPGUnlock}
-              onLock={handlePPGLock}
-            />
-          </View>
+          {generateStatCards()}
         </View>
         <View style={styles.graphCard}>
           {generateGraphHeader(selectedDataPoints[0], fftEnabled)}
@@ -933,13 +997,11 @@ const styles = StyleSheet.create({
   statContainer: {
     marginVertical: px(8),
   },
-  statCardRow: {
+  statCardContainer: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: px(16),
-    marginVertical: px(8),
-  },
-  statCard: {
-    flex: 1,
+    marginTop: px(6)
   },
 });
 

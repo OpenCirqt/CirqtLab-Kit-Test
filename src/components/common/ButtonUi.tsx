@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, TextStyle, ViewStyle } from "react-native";
+import { Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import { Colors } from "../../theme";
 import { fs } from "../../utils/setSize";
 import TextUi from "./TextUi";
@@ -10,7 +10,7 @@ type ButtonSize = "small" | "medium" | "large";
 type ButtonUiProps = {
   type: ButtonType;
   size: ButtonSize;
-  customStyle?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   children: React.ReactNode;
 };
@@ -65,7 +65,7 @@ const BUTTON_STYLE_MAP: Record<
 const ButtonUi: React.FC<ButtonUiProps> = ({
   type,
   size,
-  customStyle = {},
+  style = {},
   onPress,
   children,
 }) => {
@@ -93,7 +93,7 @@ const ButtonUi: React.FC<ButtonUiProps> = ({
         styles.button,
         stylesForType.default,
         pressed && stylesForType.pressed,
-        customStyle,
+        style,
       ]}
     >
       {({ pressed }) => (
@@ -117,7 +117,7 @@ const ButtonUi: React.FC<ButtonUiProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    marginVertical: fs(10),
+    marginVertical: fs(8),
   },
   buttonText: {
     alignSelf: "center",

@@ -48,7 +48,10 @@ const NotificationUi: React.FC<NotificationUiProps> = ({
             : "primary"
         }
         size="medium"
-        customStyle={styles.button}
+        style={[
+          styles.button,
+          type === "warning" ? styles.customSecondaryStyle : "",
+        ]}
         onPress={onPress}
       >
         {buttonText}
@@ -94,6 +97,10 @@ const styles = StyleSheet.create({
   },
   button: {
     minWidth: px(120),
+    marginRight: px(4)
+  },
+  customSecondaryStyle: {
+    borderWidth: 0,
   },
 });
 

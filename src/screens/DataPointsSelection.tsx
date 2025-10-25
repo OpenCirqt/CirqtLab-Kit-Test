@@ -37,7 +37,7 @@ const DataPointsSelection = () => {
                 : "secondary"
             }
             size="large"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => dispatch(setSelectedDataPoints(DataTypes.ACC))}
           >
             Acc
@@ -49,7 +49,7 @@ const DataPointsSelection = () => {
                 : "secondary"
             }
             size="large"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => dispatch(setSelectedDataPoints(DataTypes.GYRO))}
           >
             Gyro
@@ -61,7 +61,7 @@ const DataPointsSelection = () => {
                 : "secondary"
             }
             size="large"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => dispatch(setSelectedDataPoints(DataTypes.MAG))}
           >
             Mag
@@ -80,7 +80,7 @@ const DataPointsSelection = () => {
                 : "secondary"
             }
             size="large"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => dispatch(setSelectedDataPoints(DataTypes.PPG_RED))}
           >
             Red
@@ -92,7 +92,7 @@ const DataPointsSelection = () => {
                 : "secondary"
             }
             size="large"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => dispatch(setSelectedDataPoints(DataTypes.PPG_IR))}
           >
             IR
@@ -104,7 +104,7 @@ const DataPointsSelection = () => {
                 : "secondary"
             }
             size="large"
-            customStyle={styles.dataPoint}
+            style={styles.dataPoint}
             onPress={() => dispatch(setSelectedDataPoints(DataTypes.PPG_GREEN))}
           >
             Green

@@ -90,7 +90,7 @@ const PPGWarningModal: React.FC<PPGWarningModalProps> = ({
               size="large"
               type={canAccept ? "primary" : "disabled"}
               onPress={canAccept ? onAccept : undefined}
-              customStyle={styles.button}
+              style={styles.button}
             >
               {canAccept ? "I Understand" : `Wait ${countdown}s`}
             </ButtonUi>
@@ -98,7 +98,7 @@ const PPGWarningModal: React.FC<PPGWarningModalProps> = ({
               size="large"
               type="secondary"
               onPress={onCancel}
-              customStyle={styles.button}
+              style={styles.button}
             >
               Cancel
             </ButtonUi>

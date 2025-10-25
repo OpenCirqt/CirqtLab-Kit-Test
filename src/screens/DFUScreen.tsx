@@ -214,14 +214,22 @@ const DFUScreen = () => {
               <ButtonUi
                 type={"primary"}
                 size="large"
-                customStyle={styles.stepButton}
+                style={styles.stepButton}
                 onPress={handleFileSelect}
               >
                 {firmwareFile?.uri ? "Manage" : "Select"}
               </ButtonUi>
             </View>
             <View style={styles.stepContent}>
-              <TextUi tag="h4" weight="medium">
+              <TextUi
+                tag="h4"
+                weight="medium"
+                style={
+                  firmwareFile?.name
+                    ? styles.stepContentText
+                    : styles.stepContentDefaultText
+                }
+              >
                 {firmwareFile?.name ?? "No .zip found."}
               </TextUi>
             </View>
@@ -237,14 +245,25 @@ const DFUScreen = () => {
               <ButtonUi
                 type={"primary"}
                 size="large"
-                customStyle={styles.stepButton}
-                onPress={() => navigation.navigate("BluetoothConnection")}
+                style={styles.stepButton}
+                onPress={() => {
+                  currentIndexRef.current = -1;
+                  navigation.navigate("BluetoothConnection");
+                }}
               >
                 {connectedDevice?.id ? "Manage" : "Select"}
               </ButtonUi>
             </View>
             <View style={styles.stepContent}>
-              <TextUi tag="h4" weight="medium">
+              <TextUi
+                tag="h4"
+                weight="medium"
+                style={
+                  connectedDevice?.name
+                    ? styles.stepContentText  
+                    : styles.stepContentDefaultText
+                }
+              >
                 {connectedDevice?.name ?? "No Device Selected."}
               </TextUi>
             </View>
@@ -264,7 +283,7 @@ const DFUScreen = () => {
                     : "disabled"
                 }
                 size="large"
-                customStyle={styles.stepButton}
+                style={styles.stepButton}
                 onPress={() => startDFU(connectedDevice, firmwareFile)}
               >
                 Upload
@@ -312,13 +331,16 @@ const DFUScreen = () => {
                       <View style={styles.uploadStatusIconContainer}>
                         {icon}
                       </View>
-                      <TextUi tag="h4" weight="medium">
+                      <TextUi tag="h4" weight="medium" style={styles.stepContentText}>
                         {toSentenceCase(step)}
                       </TextUi>
                     </View>
-                    {step === "DFU_UPLOADING" && currentIndexRef.current === 1 && (
-                      <ProgressBar progress={firmwareProgress?.percent ?? 0} />
-                    )}
+                    {step === "DFU_UPLOADING" &&
+                      currentIndexRef.current === 1 && (
+                        <ProgressBar
+                          progress={firmwareProgress?.percent ?? 0}
+                        />
+                      )}
                   </View>
                 );
               })}
@@ -385,6 +407,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.warmGray,
     flexDirection: "column",
     gap: px(16),
+  },
+  stepContentText: {
+    color: Colors.darkInfoTitleText,
+  },
+  stepContentDefaultText: {
+    color: Colors.infoTitleText,
   },
   uploadStepRow: {
     flexDirection: "row",

@@ -1,11 +1,11 @@
 import { Colors } from "@/src/theme";
 import { px } from "@/src/utils/setSize";
-import React from "react";
-import { StyleSheet, View, ViewStyle, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
 import TextUi from "../common/TextUi";
 
-interface StatCardProps {
+export interface StatCardProps {
   title: string;
   value: number | null | undefined;
   unit: string;

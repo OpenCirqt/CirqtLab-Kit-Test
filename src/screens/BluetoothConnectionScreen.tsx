@@ -181,7 +181,7 @@ const BluetoothConnectionScreen = () => {
         type="primary"
         size="large"
         onPress={scan}
-        customStyle={styles.button}
+        style={styles.button}
       >
         Re-scan
       </ButtonUi>

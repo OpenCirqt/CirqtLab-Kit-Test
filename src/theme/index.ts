@@ -11,6 +11,7 @@ export const Colors = {
   warmGray: "#F2F0EB",
   text: "#3d3d3d",
   infoTitleText: "#8D8D8D",
+  darkInfoTitleText: "#414141",
   blue: "#0067c0",
   systemBlue: "#007AFF",
   yellow: "#ffb300",
