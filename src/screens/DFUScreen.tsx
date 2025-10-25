@@ -297,7 +297,7 @@ const DFUScreen = () => {
                   icon = (
                     <Ionicons
                       name="close-circle"
-                      size={22}
+                      size={px(32)}
                       color={Colors.red}
                     />
                   );
@@ -306,7 +306,7 @@ const DFUScreen = () => {
                     icon = (
                       <Ionicons
                         name="checkmark-circle"
-                        size={22}
+                        size={px(32)}
                         color={Colors.primary}
                       />
                     );
@@ -318,7 +318,7 @@ const DFUScreen = () => {
                     icon = (
                       <Ionicons
                         name="time-outline"
-                        size={22}
+                        size={px(32)}
                         color={Colors.disabled}
                       />
                     );

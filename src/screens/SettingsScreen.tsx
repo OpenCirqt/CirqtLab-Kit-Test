@@ -106,7 +106,7 @@ const SettingsScreen = () => {
                 style={styles.settingRow}
                 onPress={item.onPress}
               >
-                <Ionicons name={item.icon} size={36} color={Colors.primary} />
+                <Ionicons name={item.icon} size={px(48)} color={Colors.primary} />
                 <View style={{ flex: 1 }}>
                   <TextUi tag="h3" weight="bold">
                     {item.label}
@@ -116,7 +116,7 @@ const SettingsScreen = () => {
                 {item.forwardIcon && (
                   <Ionicons
                     name={item.forwardIcon}
-                    size={26}
+                    size={px(36)}
                     color={Colors.disabled}
                   />
                 )}

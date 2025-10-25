@@ -12,7 +12,7 @@ interface NumberCircleProps {
 
 const NumberCircle: React.FC<NumberCircleProps> = ({
   number,
-  size = 40,
+  size = px(54),
   color = Colors.primary,
   style,
 }) => {
