@@ -1,5 +1,6 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, Platform, StyleSheet, View } from "react-native";
 import ButtonUi from "../components/common/ButtonUi";
 import TextUi from "../components/common/TextUi";
 import {
@@ -26,9 +27,16 @@ const DataPointsSelection = () => {
   return (
     <View style={styles.dataSelectionContainer}>
       <View style={styles.dataSelectionSection}>
-        <TextUi tag="h3" weight="bold" style={styles.sectionHeader}>
-          IMU Sensor
-        </TextUi>
+        <View style={styles.sectionHeader}>
+          <Image
+            source={require("../assets/images/imu_sensor.png")}
+            style={{ width: px(57), height: px(57) }}
+            resizeMode="contain"
+          />        
+          <TextUi tag="h3" weight="bold">
+            IMU Sensor
+          </TextUi>
+        </View>
         <View style={styles.imuContainer}>
           <ButtonUi
             type={
@@ -69,9 +77,16 @@ const DataPointsSelection = () => {
         </View>
       </View>
       <View style={styles.dataSelectionSection}>
-        <TextUi tag="h3" weight="bold" style={styles.sectionHeader}>
-          PPG Sensor
-        </TextUi>
+        <View style={styles.sectionHeader}>
+          <Ionicons
+            name="pulse-outline"
+            size={px(60)}
+            color={Colors.tertiary}
+          />
+          <TextUi tag="h3" weight="bold">
+            {Platform.OS === "ios" ? 'Photo-Optical' : 'PPG'} Sensor
+          </TextUi>
+        </View>
         <View style={styles.imuContainer}>
           <ButtonUi
             type={
@@ -133,6 +148,9 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     paddingBottom: px(24),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: px(8)
   },
   imuContainer: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-package com.opencirqt.omniring.app
+package com.opencirqt.cirqtlabkit.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

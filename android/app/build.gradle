@@ -87,12 +87,12 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.opencirqt.omniring.app'
+    namespace 'com.opencirqt.cirqtlabkit.app'
     defaultConfig {
-        applicationId 'com.opencirqt.omniring.app'
+        applicationId 'com.opencirqt.cirqtlabkit.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
+        versionCode 1
         versionName "1.0.0"
     }
     signingConfigs {
@@ -102,11 +102,6 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        release {
-            storeFile file('../omniring.jks')
-            storePassword 'android'
-            keyAlias 'key0'
-        }
     }
     buildTypes {
         debug {
@@ -115,7 +110,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.release
+            signingConfig signingConfigs.debug
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

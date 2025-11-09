@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>OmniRing</string>
+    <string>CirqtLab Kit</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,13 +27,13 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>omniring</string>
-          <string>com.opencirqt.omniring.app</string>
+          <string>cirqtlabkit</string>
+          <string>com.opencirqt.cirqtlabkit.app</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>3</string>
+    <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -46,7 +46,7 @@
       <true/>
     </dict>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>App requires Bluetooth access to connect to the OmniRing device.</string>
+    <string>App requires Bluetooth access to connect to the CirqtLab device.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationAlwaysUsageDescription</key>

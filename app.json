@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "OmniRing",
-    "slug": "OmniRing",
+    "name": "CirqtLab Kit",
+    "slug": "cirqtlab-kit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
-    "scheme": "omniring",
+    "scheme": "cirqtlabkit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.opencirqt.omniring.app"
+      "bundleIdentifier": "com.opencirqt.cirqtlabkit.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +25,7 @@
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.opencirqt.omniring.app"
+      "package": "com.opencirqt.cirqtlabkit.app"
     },
     "web": {
       "bundler": "metro",
@@ -60,7 +60,7 @@
       [
         "react-native-ble-manager",
         {
-          "bluetoothAlwaysPermission": "App requires Bluetooth access to connect to the OmniRing device.",
+          "bluetoothAlwaysPermission": "App requires Bluetooth access to connect to the CirqtLab device.",
           "isBleRequired": true,
           "neverForLocation": true
         }

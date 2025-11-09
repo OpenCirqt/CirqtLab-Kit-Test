@@ -1,4 +1,4 @@
-# OmniRing
+# CirqtLab Kit
 
 An app to monitor and collect sensor data from Omni Ring, with firmware upgrade capability.
 
@@ -32,7 +32,7 @@ Android: <https://youtu.be/RUDWIhmi_AQ?si=TjyfcvOSTkZVFZVK>
 
 3. Open XCode
 
-    When you're ready, navigate to `/ios`, open `omniRing.xcworkspace`, select a real iPhone (simulator won't work for bluetooth), then hit Play.
+    When you're ready, navigate to `/ios`, open `CirqtLabKit.xcworkspace`, select a real iPhone (simulator won't work for bluetooth), then hit Play.
 
     Configure development team as necessary.
 

@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "OmniRing.app"
-               BlueprintName = "OmniRing"
-               ReferencedContainer = "container:OmniRing.xcodeproj">
+               BuildableName = "CirqtLabKit.app"
+               BlueprintName = "CirqtLabKit"
+               ReferencedContainer = "container:CirqtLabKit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "OmniRingTests.xctest"
-               BlueprintName = "OmniRingTests"
-               ReferencedContainer = "container:OmniRing.xcodeproj">
+               BuildableName = "CirqtLabKitTests.xctest"
+               BlueprintName = "CirqtLabKitTests"
+               ReferencedContainer = "container:CirqtLabKit.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "OmniRing.app"
-            BlueprintName = "OmniRing"
-            ReferencedContainer = "container:OmniRing.xcodeproj">
+            BuildableName = "CirqtLabKit.app"
+            BlueprintName = "CirqtLabKit"
+            ReferencedContainer = "container:CirqtLabKit.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "OmniRing.app"
-            BlueprintName = "OmniRing"
-            ReferencedContainer = "container:OmniRing.xcodeproj">
+            BuildableName = "CirqtLabKit.app"
+            BlueprintName = "CirqtLabKit"
+            ReferencedContainer = "container:CirqtLabKit.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

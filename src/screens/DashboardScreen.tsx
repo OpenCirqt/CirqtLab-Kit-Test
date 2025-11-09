@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import {
@@ -10,6 +11,7 @@ import * as FileSystem from "expo-file-system";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Image,
   Platform,
   processColor,
   ScrollView,
@@ -37,7 +39,12 @@ import { DashboardRootStackParamList } from "../navigations/DashboardNavigator";
 import { RootTabParamList } from "../navigations/TabNavigator";
 import { useAppDispatch, useAppSelector } from "../store";
 import { Colors } from "../theme";
-import { DataTypes, Status } from "../utils/constants";
+import {
+  DataTypeCategory,
+  DataTypes,
+  dataTypeToCategory,
+  Status,
+} from "../utils/constants";
 import { defaultFFTConfig, FFTConfig, FFTPresets } from "../utils/fftConfig";
 import { transformToFrequencyDomain } from "../utils/fftUtils";
 import { MaxBufferSize, SensorParameter } from "../utils/indexRange";
@@ -632,12 +639,28 @@ const DashboardScreen = () => {
   const generateGraphHeader = (dataType: DataTypes, fftEnabled: boolean) => {
     return (
       <View style={styles.graphCardHeaderContainer}>
-        <TextUi tag="h2" weight="bold" style={styles.graphHeader}>
-          {dataType.toUpperCase()} 
-          <TextUi tag="h3" weight="bold" style={styles.graphHeader}>
-            {fftEnabled ? " (FFT)" : " (Time Domain)"}
+        <View style={styles.graphCardHeaderLeft}>
+          {dataTypeToCategory[dataType] === DataTypeCategory.IMU && (
+            <Image
+              source={require("../assets/images/imu_sensor.png")}
+              style={{ width: px(57), height: px(57) }}
+              resizeMode="contain"
+            />
+          )}
+          {dataTypeToCategory[dataType] === DataTypeCategory.PPG && (
+            <Ionicons
+              name="pulse-outline"
+              size={px(54)}
+              color={Colors.tertiary}
+            />
+          )}
+          <TextUi tag="h2" weight="bold" style={styles.graphHeader}>
+            {dataType.toUpperCase()}
+            <TextUi tag="h3" weight="bold" style={styles.graphHeader}>
+              {fftEnabled ? " (FFT)" : " (Time Domain)"}
+            </TextUi>
           </TextUi>
-        </TextUi>
+        </View>
         {cachedData.current.length > 1 && (
           <View style={styles.graphLastReadingContainer}>
             <TextUi tag="h5" weight="medium">
@@ -977,6 +1000,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  graphCardHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: px(8)
+  },
   graphHeader: {
     color: Colors.primary,
   },
@@ -1001,7 +1029,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: px(16),
-    marginTop: px(6)
+    marginTop: px(6),
   },
 });
 
