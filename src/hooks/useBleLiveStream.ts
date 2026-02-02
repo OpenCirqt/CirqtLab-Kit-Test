@@ -7,14 +7,14 @@ export const useBleLiveStream = (
   peripheralId: string | undefined,
   collecting: boolean,
   onData: (data: any) => void,
-  onStart: (data: number) => void
+  onStart: (data: number) => void,
 ) => {
   const listenerRef = useRef<any>(null);
 
   useEffect(() => {
     const stopNotification = async (peripheralId: string) => {
       await BleManager.stopNotification(peripheralId, ServiceUUID, RxUUID);
-    }
+    };
     if (!peripheralId || !collecting) {
       if (peripheralId) {
         stopNotification(peripheralId);
@@ -35,7 +35,8 @@ export const useBleLiveStream = (
           const value = bytes.readFloatLE(i);
           floatArray.push(value);
         }
-        onData(floatArray);
+
+        onData([Date.now(), ...floatArray]);
       };
 
       try {
@@ -56,9 +57,9 @@ export const useBleLiveStream = (
     return () => {
       listenerRef.current?.remove();
       BleManager.stopNotification(peripheralId, ServiceUUID, RxUUID).catch(
-        () => {}
+        () => {},
       );
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [peripheralId, collecting]);
 };

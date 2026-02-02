@@ -84,7 +84,7 @@ const buildDataSets = (
   nestedData: number[][],
   dataType: DataTypes,
   fftEnabled: boolean = false,
-  fftConfig: FFTConfig = defaultFFTConfig
+  fftConfig: FFTConfig = defaultFFTConfig,
 ): LineDataset[] => {
   const keepIndices = SensorParameter[dataType];
 
@@ -94,7 +94,7 @@ const buildDataSets = (
       const values = transformToFrequencyDomain(
         nestedData,
         colIndex,
-        fftConfig
+        fftConfig,
       );
 
       return {
@@ -143,7 +143,7 @@ const DashboardScreen = () => {
   const connectedDevice = useAppSelector((state) => state.ble.peripheral);
   const isAutoReconnect = useAppSelector((state) => state.ble.autoReconnect);
   const selectedDataPoints = useAppSelector(
-    (state) => state.ble.selectedDataPoints
+    (state) => state.ble.selectedDataPoints,
   );
   const collecting = useAppSelector((state) => state.ble.collecting);
   const uploading = useAppSelector((state) => state.ble.uploading);
@@ -187,6 +187,7 @@ const DashboardScreen = () => {
   // ppg analyzer
   const [ppgAnalysisResult, setPpgAnalysisResult] =
     useState<AnalysisResult | null>(null);
+  const cachedPpgData = useRef<number[][]>([]);
 
   // PPG unlock state
   const ppgUnlocked = useRef<boolean>(false);
@@ -241,7 +242,7 @@ const DashboardScreen = () => {
       Alert.alert(
         "PPG Locked",
         "Heart Rate and SpO2 readings have been locked. Tap to unlock again.",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
     } catch (error) {
       console.error("Failed to lock PPG:", error);
@@ -284,7 +285,7 @@ const DashboardScreen = () => {
         samplingRate: actualSamplingRate,
         maxFrequency: Math.min(
           getFFTPresetForDataType(selectedDataPoint1Ref.current).maxFrequency,
-          actualSamplingRate / 2 // Nyquist limit
+          actualSamplingRate / 2, // Nyquist limit
         ),
       };
 
@@ -293,7 +294,7 @@ const DashboardScreen = () => {
         samplingRate: actualSamplingRate,
         maxFrequency: Math.min(
           getFFTPresetForDataType(selectedDataPoint2Ref.current).maxFrequency,
-          actualSamplingRate / 2 // Nyquist limit
+          actualSamplingRate / 2, // Nyquist limit
         ),
       };
 
@@ -302,7 +303,7 @@ const DashboardScreen = () => {
           dataSet,
           selectedDataPoint1Ref.current,
           fftEnabled,
-          fftConfig1
+          fftConfig1,
         ),
       });
       setChart2DataSet({
@@ -310,7 +311,7 @@ const DashboardScreen = () => {
           dataSet,
           selectedDataPoint2Ref.current,
           fftEnabled,
-          fftConfig2
+          fftConfig2,
         ),
       });
     }
@@ -414,12 +415,12 @@ const DashboardScreen = () => {
         ir: data[SensorParameter[DataTypes.PPG_IR][0]],
         red: data[SensorParameter[DataTypes.PPG_RED][0]],
         green: data[SensorParameter[DataTypes.PPG_GREEN][0]],
-        timestampMs: Date.now(),
+        timestampMs: data[0],
       });
     },
     (data) => {
       elapsedStartRef.current = data;
-    }
+    },
   );
 
   useEffect(() => {
@@ -464,7 +465,7 @@ const DashboardScreen = () => {
           dataSet,
           selectedDataPoint1Ref.current,
           false,
-          defaultFFTConfig
+          defaultFFTConfig,
         ),
       });
       setChart2DataSet({
@@ -472,7 +473,7 @@ const DashboardScreen = () => {
           dataSet,
           selectedDataPoint2Ref.current,
           false,
-          defaultFFTConfig
+          defaultFFTConfig,
         ),
       });
 
@@ -489,17 +490,14 @@ const DashboardScreen = () => {
       }
 
       // update buffer used
-      bufferUsedSizeRef.current =
-        bufferUsedSizeRef.current +
+      bufferUsedSizeRef.current +=
         cachedData.current.length *
-          (cachedData.current[0] === undefined
-            ? 0
-            : cachedData.current[0].length * 4);
+        (cachedData.current[0]?.length ? cachedData.current[0].length * 8 : 0);
 
       if (bufferUsedSizeRef.current > MaxBufferSize) {
         Alert.alert(
           "Warning",
-          "Buffer is full, stopping collection. Please save your data."
+          "Buffer is full, stopping collection. Please save your data.",
         );
         dispatch(setCollecting(false));
       }
@@ -508,6 +506,19 @@ const DashboardScreen = () => {
       if (ppgUnlocked.current && ppgAnalyzer) {
         const analysisResult = ppgAnalyzer.analyze();
         setPpgAnalysisResult(analysisResult);
+
+        cachedPpgData.current.push([
+          Date.now(),
+          analysisResult?.hr.bpm ?? 0,
+          analysisResult?.spo2.spo2 ?? 0,
+        ]);
+
+        // update buffer used
+        bufferUsedSizeRef.current +=
+          cachedPpgData.current.length *
+          (cachedPpgData.current[0]?.length
+            ? cachedPpgData.current[0].length * 8
+            : 0);
       }
     }, 300);
   };
@@ -523,9 +534,8 @@ const DashboardScreen = () => {
 
       const now = Date.now();
       const dir = `${FileSystem.documentDirectory}${filePrefix}/`;
-      const fileUri = `${dir}${filePrefix}_${now}.csv`;
-
-      const fileDisplay = `${filePrefix}_${now}.csv`;
+      const rawFileDisplay = `${filePrefix}_raw_${now}.csv`;
+      const rawFileUri = `${dir}${rawFileDisplay}`;
 
       const dirInfo = await FileSystem.getInfoAsync(dir);
       if (!dirInfo.exists) {
@@ -534,11 +544,26 @@ const DashboardScreen = () => {
         });
       }
 
-      await FileSystem.writeAsStringAsync(fileUri, csvString, {
+      await FileSystem.writeAsStringAsync(rawFileUri, csvString, {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      setDoneMessage(`File ${fileDisplay} has been saved.`);
+      let doneMessage = `File ${rawFileDisplay} has been saved.`;
+
+      if (Platform.OS === "android") {
+        const csvOutputString = convertToCsv(cachedPpgData.current);
+
+        const outputFileDisplay = `${filePrefix}_output_${now}.csv`;
+        const outputFileUri = `${dir}${outputFileDisplay}`;
+
+        await FileSystem.writeAsStringAsync(outputFileUri, csvOutputString, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        doneMessage = `Files ${rawFileDisplay} and ${outputFileDisplay} have been saved`;
+      }
+
+      setDoneMessage(doneMessage);
     } catch (err) {
       setDoneMessage(`Error: ${String(err)}`);
     } finally {
@@ -832,8 +857,8 @@ const DashboardScreen = () => {
               collecting || cachedData.current.length === 0
                 ? "disabled"
                 : fftEnabled
-                ? "primary"
-                : "secondary"
+                  ? "primary"
+                  : "secondary"
             }
             size="medium"
             style={{ flex: 1 }}
@@ -1003,7 +1028,7 @@ const styles = StyleSheet.create({
   graphCardHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: px(8)
+    gap: px(8),
   },
   graphHeader: {
     color: Colors.primary,
