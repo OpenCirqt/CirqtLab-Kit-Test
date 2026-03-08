@@ -135,7 +135,8 @@ const buildDataSets = (
 // initialize PPG analyzer
 let ppgAnalyzer: PPGAnalyzer | undefined = undefined;
 if (Platform.OS === "android") {
-  ppgAnalyzer = new PPGAnalyzer({ windowSec: 10 });
+  // TODO: make the sample rate dynamic
+  ppgAnalyzer = new PPGAnalyzer({ windowSec: 10, sampleRateHz: 60 });
 }
 
 const DashboardScreen = () => {
@@ -188,6 +189,9 @@ const DashboardScreen = () => {
   const [ppgAnalysisResult, setPpgAnalysisResult] =
     useState<AnalysisResult | null>(null);
   const cachedPpgData = useRef<number[][]>([]);
+  const ppgDataUpdateTimer = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
   // PPG unlock state
   const ppgUnlocked = useRef<boolean>(false);
@@ -195,7 +199,6 @@ const DashboardScreen = () => {
 
   // FFT state - only available after collection stops
   const [fftEnabled, setFftEnabled] = useState(false);
-  const [fftConfig, setFftConfig] = useState<FFTConfig>(defaultFFTConfig);
 
   // Load PPG unlock state from AsyncStorage on mount
   useEffect(() => {
@@ -329,6 +332,10 @@ const DashboardScreen = () => {
       clearInterval(graphUpdateTimer.current);
       graphUpdateTimer.current = null;
     }
+    if (ppgDataUpdateTimer.current != null) {
+      clearInterval(ppgDataUpdateTimer.current);
+      ppgDataUpdateTimer.current = null;
+    }
     dispatch(setCollecting(false));
   };
 
@@ -337,6 +344,7 @@ const DashboardScreen = () => {
       dispatch(clearPeripheral());
       resetStates();
       graphUpdateTimer.current = null;
+      ppgDataUpdateTimer.current = null;
       await BleManager.disconnect(connectedDevice.id);
     }
   };
@@ -411,12 +419,6 @@ const DashboardScreen = () => {
     collecting,
     (data) => {
       cachedData.current.push(data as number[]);
-      ppgAnalyzer?.push({
-        ir: data[SensorParameter[DataTypes.PPG_IR][0]],
-        red: data[SensorParameter[DataTypes.PPG_RED][0]],
-        green: data[SensorParameter[DataTypes.PPG_GREEN][0]],
-        timestampMs: data[0],
-      });
     },
     (data) => {
       elapsedStartRef.current = data;
@@ -508,9 +510,9 @@ const DashboardScreen = () => {
         setPpgAnalysisResult(analysisResult);
 
         cachedPpgData.current.push([
-          Date.now(),
           analysisResult?.hr.bpm ?? 0,
           analysisResult?.spo2.spo2 ?? 0,
+          Date.now(),
         ]);
 
         // update buffer used
@@ -521,6 +523,17 @@ const DashboardScreen = () => {
             : 0);
       }
     }, 300);
+
+    ppgDataUpdateTimer.current = setInterval(() => {
+      if (cachedData.current.length > 0 && ppgAnalyzer) {
+        const data = cachedData.current[cachedData.current.length - 1];
+        ppgAnalyzer.push({
+          ir: data[SensorParameter[DataTypes.PPG_IR][0]],
+          red: data[SensorParameter[DataTypes.PPG_RED][0]],
+          green: data[SensorParameter[DataTypes.PPG_GREEN][0]],
+        });
+      }
+    }, 10);
   };
 
   const convertToCsv = (matrix: number[][]) => {
@@ -605,8 +618,14 @@ const DashboardScreen = () => {
       clearInterval(graphUpdateTimer.current);
     }
 
+    // clear ppg analysis timer
+    if (ppgDataUpdateTimer.current !== null) {
+      clearInterval(ppgDataUpdateTimer.current);
+    }
+
     // clear BLE emitted data
     cachedData.current = [];
+    cachedPpgData.current = [];
 
     // clear and reset PPG analysis
     setPpgAnalysisResult(null);

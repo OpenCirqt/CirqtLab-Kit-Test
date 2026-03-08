@@ -58,7 +58,7 @@ export class PPGAnalyzer {
       windowSec?: number; // default 10 s
       sampleRateHz?: number; // if omitted, will infer from timestamps
       spo2Coeffs?: SpO2Coeffs; // default {A:110, B:25}
-    } = {}
+    } = {},
   ) {
     this.windowSec = opts.windowSec ?? 10;
     this.targetFs = opts.sampleRateHz ?? null;
@@ -74,7 +74,7 @@ export class PPGAnalyzer {
       sample.timestampMs ??
         (this.tms.length
           ? this.tms[this.tms.length - 1] + 1000 / (this.targetFs ?? 100)
-          : 0)
+          : 0),
     );
     this.trimToWindow();
   }
@@ -96,7 +96,7 @@ export class PPGAnalyzer {
     const fs = this.resolveFs();
     const need = Math.max(
       this.MIN_SAMPLES,
-      Math.round(this.windowSec * fs * 0.8)
+      Math.round(this.windowSec * fs * 0.8),
     );
 
     if (this.green.length < need) {
@@ -181,15 +181,15 @@ export class PPGAnalyzer {
     const hrQuality = !bpm
       ? "insufficient-data"
       : snrDb !== null && snrDb < 6
-      ? "low-snr"
-      : "good";
+        ? "low-snr"
+        : "good";
 
     const spo2Quality =
       !spo2 || !bpm
         ? "insufficient-data"
         : snrDb !== null && snrDb < 6
-        ? "low-snr"
-        : "good";
+          ? "low-snr"
+          : "good";
 
     return {
       fs,
@@ -370,7 +370,7 @@ function peakWithParabolicInterpolation(
   mag: Float64Array,
   freqs: Float64Array,
   i0: number,
-  i1: number
+  i1: number,
 ): { bin: number; freq: number; mag: number } | null {
   if (i1 - i0 < 3) return null;
   let k = i0;
@@ -409,7 +409,7 @@ function estimateSNRdB(
   peakBin: number,
   i0: number,
   i1: number,
-  guard: number
+  guard: number,
 ): number {
   const peak = mag[peakBin]!;
   let noiseSum = 0,
@@ -429,7 +429,7 @@ function bandPowerAround(
   spec: Float64Array,
   freqs: Float64Array,
   centerHz: number,
-  halfBandHz: number
+  halfBandHz: number,
 ): number {
   // Sum magnitudes (or power) across bins whose freq within [center±halfBand]
   // Here we return "AC amplitude proxy" as sum of magnitudes.

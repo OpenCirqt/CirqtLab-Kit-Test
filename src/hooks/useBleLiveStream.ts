@@ -36,7 +36,7 @@ export const useBleLiveStream = (
           floatArray.push(value);
         }
 
-        onData([Date.now(), ...floatArray]);
+        onData([...floatArray, Date.now()]);
       };
 
       try {
