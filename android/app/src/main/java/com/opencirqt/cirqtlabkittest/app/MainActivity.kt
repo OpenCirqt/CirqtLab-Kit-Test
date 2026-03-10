@@ -1,4 +1,4 @@
-package com.opencirqt.cirqtlabkit.app
+package com.opencirqt.cirqtlabkittest.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

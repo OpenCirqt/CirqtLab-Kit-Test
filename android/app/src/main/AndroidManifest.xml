@@ -35,7 +35,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="cirqtlabkit"/>
+        <data android:scheme="cirqtlabkittest"/>
+        <data android:scheme="exp+cirqtlab-kit-test"/>
       </intent-filter>
     </activity>
   </application>

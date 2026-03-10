@@ -65,6 +65,14 @@ export class PPGAnalyzer {
     this.spo2Coeffs = opts.spo2Coeffs ?? { A: 110, B: 25 };
   }
 
+  setSampleRateHz(fs: number | null) {
+    this.targetFs = fs && fs > 0 ? fs : null;
+  }
+
+  getSampleRateHz() {
+    return this.targetFs;
+  }
+
   /** Push one sample (call this in your BLE notification callback) */
   push(sample: PPGSample) {
     this.ir.push(sample.ir);

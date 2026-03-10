@@ -12,7 +12,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
-  Platform,
   processColor,
   ScrollView,
   StyleSheet,
@@ -134,10 +133,10 @@ const buildDataSets = (
 
 // initialize PPG analyzer
 let ppgAnalyzer: PPGAnalyzer | undefined = undefined;
-if (Platform.OS === "android") {
-  // TODO: make the sample rate dynamic
-  ppgAnalyzer = new PPGAnalyzer({ windowSec: 10, sampleRateHz: 60 });
-}
+// if (Platform.OS === "android") {
+// TODO: make the sample rate dynamic
+ppgAnalyzer = new PPGAnalyzer({ windowSec: 10 });
+// }
 
 const DashboardScreen = () => {
   // from redux store
@@ -506,6 +505,12 @@ const DashboardScreen = () => {
 
       // conduct PPG analysis (only if unlocked)
       if (ppgUnlocked.current && ppgAnalyzer) {
+        const sampleRate =
+          elapsedTimeRef.current > 0
+            ? cachedData.current.length / elapsedTimeRef.current
+            : 60;
+        ppgAnalyzer.setSampleRateHz(sampleRate);
+
         const analysisResult = ppgAnalyzer.analyze();
         setPpgAnalysisResult(analysisResult);
 
@@ -563,18 +568,18 @@ const DashboardScreen = () => {
 
       let doneMessage = `File ${rawFileDisplay} has been saved.`;
 
-      if (Platform.OS === "android") {
-        const csvOutputString = convertToCsv(cachedPpgData.current);
+      // if (Platform.OS === "android") {
+      const csvOutputString = convertToCsv(cachedPpgData.current);
 
-        const outputFileDisplay = `${filePrefix}_output_${now}.csv`;
-        const outputFileUri = `${dir}${outputFileDisplay}`;
+      const outputFileDisplay = `${filePrefix}_output_${now}.csv`;
+      const outputFileUri = `${dir}${outputFileDisplay}`;
 
-        await FileSystem.writeAsStringAsync(outputFileUri, csvOutputString, {
-          encoding: FileSystem.EncodingType.UTF8,
-        });
+      await FileSystem.writeAsStringAsync(outputFileUri, csvOutputString, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
 
-        doneMessage = `Files ${rawFileDisplay} and ${outputFileDisplay} have been saved`;
-      }
+      doneMessage = `Files ${rawFileDisplay} and ${outputFileDisplay} have been saved`;
+      // }
 
       setDoneMessage(doneMessage);
     } catch (err) {
@@ -754,26 +759,26 @@ const DashboardScreen = () => {
       },
     ];
 
-    if (Platform.OS === "android") {
-      statCardPropsList.push({
-        title: "Heart Rate",
-        value: ppgUnlocked.current ? ppgAnalysisResult?.hr.bpm : undefined,
-        decimal: 2,
-        unit: "bpm",
-        locked: !ppgUnlocked.current,
-        onUnlock: handlePPGUnlock,
-        onLock: handlePPGLock,
-      });
-      statCardPropsList.push({
-        title: "SpO2",
-        value: ppgUnlocked.current ? ppgAnalysisResult?.spo2.spo2 : undefined,
-        decimal: 2,
-        unit: "%",
-        locked: !ppgUnlocked.current,
-        onUnlock: handlePPGUnlock,
-        onLock: handlePPGLock,
-      });
-    }
+    // if (Platform.OS === "android") {
+    statCardPropsList.push({
+      title: "Heart Rate",
+      value: ppgUnlocked.current ? ppgAnalysisResult?.hr.bpm : undefined,
+      decimal: 2,
+      unit: "bpm",
+      locked: !ppgUnlocked.current,
+      onUnlock: handlePPGUnlock,
+      onLock: handlePPGLock,
+    });
+    statCardPropsList.push({
+      title: "SpO2",
+      value: ppgUnlocked.current ? ppgAnalysisResult?.spo2.spo2 : undefined,
+      decimal: 2,
+      unit: "%",
+      locked: !ppgUnlocked.current,
+      onUnlock: handlePPGUnlock,
+      onLock: handlePPGLock,
+    });
+    // }
 
     const itemsPerRow = statCardPropsList.length <= 4 ? 2 : 3;
     const itemWidth =

@@ -1,4 +1,4 @@
-package com.opencirqt.cirqtlabkit.app
+package com.opencirqt.cirqtlabkittest.app
 
 import android.app.Application
 import android.content.res.Configuration
