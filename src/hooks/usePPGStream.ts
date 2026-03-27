@@ -98,11 +98,16 @@ export interface PPGStreamConfig {
    *
    *  'hold'   — output the last accepted value (default, flattest)
    *  'median' — output the current reference median
-   *  'lerp'   — linearly interpolate between last and next accepted values
-   *             (smoothest, but introduces a one-sample delay for the next
-   *              value — use only when latency is not critical)
+   *  'lerp'   — hold spike samples back in a queue, then backfill them
+   *             with linear interpolation between the last good value and
+   *             the next good value once it arrives.  Produces the smoothest
+   *             waveform at the cost of up to maxConsecutiveSpikes samples
+   *             of latency during a spike run (typically 1–3 samples = 40–120 ms
+   *             at 25 Hz).  Recommended when feeding a display waveform or
+   *             an FFT analyzer — the interpolated gap looks natural and
+   *             does not introduce discontinuities.
    *
-   * Default: 'hold'
+   * Default: 'lerp'
    */
   replacementStrategy?: "hold" | "median" | "lerp";
 
@@ -165,6 +170,29 @@ function sortedMedian(sorted: number[]): number {
   return n % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+/**
+ * Result from ChannelFilter.process().
+ *
+ * For 'hold' and 'median' strategies, `emit` always contains exactly one
+ * entry — the current sample (cleaned or replaced).
+ *
+ * For 'lerp' strategy, `emit` may contain MORE than one entry when a run
+ * of spike samples is resolved by the arrival of the next valid sample.
+ * The extra entries are the back-filled interpolated values that were held
+ * back during the spike run.  The caller must emit all of them in order.
+ *
+ * `timestamps` is parallel to `emit` — same length, providing the original
+ * hardware timestamp for each held-back sample so the downstream sliding
+ * window gets accurate timing.
+ */
+interface ChannelProcessResult {
+  emit: number[]; // values to emit (length ≥ 1)
+  timestamps: number[]; // parallel timestamps
+  isSpike: boolean; // true if the incoming raw sample was a spike
+  referenceMedian: number;
+  didReset: boolean;
+}
+
 class ChannelFilter {
   // Rolling FIFO of accepted values (insertion-order)
   private fifo: number[] = [];
@@ -180,10 +208,13 @@ class ChannelFilter {
   private consecutiveSpikes: number = 0;
   private resets: number = 0;
 
-  // For 'lerp' strategy: buffer the previous accepted value so we can patch
-  // the held replacement once the next real value arrives.
-  // (Simple approach: track the pending lerp target count.)
-  private pendingLerpCount: number = 0;
+  // Lerp pending queue:
+  //   When a spike is detected and strategy === 'lerp', we don't emit
+  //   immediately.  Instead we push { rawTimestamp } into lerpPending and
+  //   hold the sample.  When the next NON-spike sample arrives we know both
+  //   endpoints (lastAccepted = start, newValue = end) and can interpolate
+  //   all the held positions linearly before emitting the new value.
+  private lerpPending: { timestamp: number }[] = [];
 
   constructor(
     windowSize: number,
@@ -198,23 +229,23 @@ class ChannelFilter {
   }
 
   /**
-   * Process a single raw value.
-   * Returns { cleaned, isSpike, referenceMedian, didReset }.
+   * Process a single raw value + its hardware timestamp.
+   *
+   * Returns a ChannelProcessResult.  For 'lerp' strategy the caller MUST
+   * iterate result.emit in full and emit each entry — there may be multiple
+   * back-filled samples followed by the current one.
    */
   process(
     raw: number,
+    timestamp: number,
     strategy: "hold" | "median" | "lerp",
-  ): {
-    cleaned: number;
-    isSpike: boolean;
-    referenceMedian: number;
-    didReset: boolean;
-  } {
+  ): ChannelProcessResult {
     // ── Bootstrap: not enough reference yet ──────────────────────────────
     if (this.fifo.length < 3) {
       this.accept(raw);
       return {
-        cleaned: raw,
+        emit: [raw],
+        timestamps: [timestamp],
         isSpike: false,
         referenceMedian: raw,
         didReset: false,
@@ -224,20 +255,48 @@ class ChannelFilter {
     const refMedian = sortedMedian(this.sorted);
 
     // ── Spike test ────────────────────────────────────────────────────────
-    // Both ratio AND absolute conditions must be met to avoid false positives
-    // near zero baseline.
+    // Both ratio AND absolute thresholds must be exceeded to avoid false
+    // positives when the signal baseline is near zero.
     const absDiff = Math.abs(raw - refMedian);
     const ratioExceeded =
       refMedian !== 0 && absDiff / Math.abs(refMedian) > this.ratioThreshold;
     const absExceeded = absDiff > this.absoluteThreshold;
     const isSpike = ratioExceeded && absExceeded;
 
+    // ── Non-spike: clean sample arrived ──────────────────────────────────
     if (!isSpike) {
       this.consecutiveSpikes = 0;
-      this.pendingLerpCount = 0;
+
+      if (strategy === "lerp" && this.lerpPending.length > 0) {
+        // We have N held-back spike positions between lastAccepted and raw.
+        // Interpolate linearly: position 0 → lastAccepted, position N+1 → raw.
+        const start = this.lastAccepted ?? refMedian;
+        const end = raw;
+        const steps = this.lerpPending.length + 1; // N gaps between start and end
+
+        const backfilled = this.lerpPending.map((p, i) => ({
+          value: start + (end - start) * ((i + 1) / steps),
+          timestamp: p.timestamp,
+        }));
+        this.lerpPending = [];
+
+        this.accept(raw);
+
+        // Emit all backfilled interpolated values, then the current real value
+        return {
+          emit: [...backfilled.map((b) => b.value), raw],
+          timestamps: [...backfilled.map((b) => b.timestamp), timestamp],
+          isSpike: true, // the prior samples were spikes
+          referenceMedian: refMedian,
+          didReset: false,
+        };
+      }
+
+      // Normal (non-lerp) path or lerp with no pending
       this.accept(raw);
       return {
-        cleaned: raw,
+        emit: [raw],
+        timestamps: [timestamp],
         isSpike: false,
         referenceMedian: refMedian,
         didReset: false,
@@ -247,39 +306,56 @@ class ChannelFilter {
     // ── Spike detected ────────────────────────────────────────────────────
     this.consecutiveSpikes++;
 
-    // Long run of spikes → likely a genuine signal level change (finger
-    // off/on). Reset the reference to the incoming value.
+    // Long run of spikes → genuine signal level change (finger off/on).
+    // Flush any lerp pending, reset reference, emit the incoming value as-is.
     if (this.consecutiveSpikes >= this.maxConsecutiveSpikes) {
+      const flushedPending = this.lerpPending.map((p) => ({
+        value: this.lastAccepted ?? refMedian,
+        timestamp: p.timestamp,
+      }));
+      this.lerpPending = [];
       this.reset(raw);
       this.resets++;
+
+      const emitValues = [...flushedPending.map((p) => p.value), raw];
+      const emitTimestamps = [
+        ...flushedPending.map((p) => p.timestamp),
+        timestamp,
+      ];
+
       return {
-        cleaned: raw,
+        emit: emitValues,
+        timestamps: emitTimestamps,
         isSpike: true,
         referenceMedian: refMedian,
         didReset: true,
       };
     }
 
-    // Choose replacement
-    let replacement: number;
-    if (strategy === "median") {
-      replacement = refMedian;
-    } else if (strategy === "lerp") {
-      // Output last accepted now; callers can't easily patch previous samples,
-      // so this is effectively 'hold' in a streaming context. We track the
-      // count so the *next* real value can fill a smoother interpolated gap.
-      replacement = this.lastAccepted ?? refMedian;
-      this.pendingLerpCount++;
-    } else {
-      // 'hold'
-      replacement = this.lastAccepted ?? refMedian;
+    // ── Spike: apply replacement strategy ────────────────────────────────
+    if (strategy === "lerp") {
+      // Hold this sample — do not emit yet.
+      // Record its timestamp so we can interpolate once the next clean
+      // sample arrives.  The caller will receive an empty emit array
+      // and must NOT forward anything downstream for this sample.
+      this.lerpPending.push({ timestamp });
+      // Do NOT add to reference buffer — key invariant preserved.
+      return {
+        emit: [],
+        timestamps: [],
+        isSpike: true,
+        referenceMedian: refMedian,
+        didReset: false,
+      };
     }
 
-    // Do NOT push the spike (or replacement) into the reference buffer.
-    // This is the key invariant: the reference always reflects clean signal.
+    // 'hold' or 'median' — emit a placeholder immediately
+    const replacement =
+      strategy === "median" ? refMedian : (this.lastAccepted ?? refMedian);
 
     return {
-      cleaned: replacement,
+      emit: [replacement],
+      timestamps: [timestamp],
       isSpike: true,
       referenceMedian: refMedian,
       didReset: false,
@@ -294,22 +370,19 @@ class ChannelFilter {
     this.fifo = [];
     this.sorted = [];
     this.consecutiveSpikes = 0;
-    this.pendingLerpCount = 0;
+    this.lerpPending = [];
     this.lastAccepted = seedValue ?? null;
     if (seedValue !== undefined) this.accept(seedValue);
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────
+  // ── Private ────────────────────────────────────────────────────────────
 
   private accept(value: number): void {
     this.lastAccepted = value;
-
-    // Evict oldest if at capacity
     if (this.fifo.length >= this.windowSize) {
       const evicted = this.fifo.shift()!;
       sortedRemove(this.sorted, evicted);
     }
-
     this.fifo.push(value);
     sortedInsert(this.sorted, value);
   }
@@ -324,7 +397,7 @@ const STREAM_DEFAULTS = {
   spikeAbsoluteThreshold: 500,
   referenceWindowSize: 12,
   maxConsecutiveSpikes: 8,
-  replacementStrategy: "hold" as const,
+  replacementStrategy: "lerp" as const,
 };
 
 /**
@@ -417,59 +490,87 @@ export function usePPGStream(config: PPGStreamConfig) {
 
     const strategy = cfg.replacementStrategy;
 
-    // ── IR ────────────────────────────────────────────────────────────────
-    const irResult = irFilter.current.process(rawIr, strategy);
+    // ── Per-channel filtering ─────────────────────────────────────────────
+    // Each filter returns an `emit` array.
+    //   • 'hold' / 'median': always length 1 (immediate replacement)
+    //   • 'lerp':            length 0 while spike is pending (held back),
+    //                        then length N+1 when the next clean sample
+    //                        arrives (N backfilled lerp values + current)
+    //
+    // All three channels are processed with the SAME timestamp so the
+    // backfill arrays are always the same length — we zip them below.
+
+    const irResult = irFilter.current.process(rawIr, timestamp, strategy);
+    const redResult = redFilter.current.process(rawRed, timestamp, strategy);
+    const effectiveGreen = rawGreen != null && rawGreen > 0 ? rawGreen : rawIr;
+    const greenResult = greenFilter.current.process(
+      effectiveGreen,
+      timestamp,
+      strategy,
+    );
+
+    // ── Spike diagnostics ─────────────────────────────────────────────────
     if (irResult.isSpike) {
       statsRef.current.spikesIR++;
+      // For lerp, replacedWith is the interpolated value that will be emitted
+      // once the next clean sample resolves the gap — use 0 as placeholder
+      // since the actual value isn't known yet.
       onSpikeRef.current?.({
         channel: "ir",
         rawValue: rawIr,
         referenceMedian: irResult.referenceMedian,
-        replacedWith: irResult.cleaned,
+        replacedWith: irResult.emit[0] ?? 0,
         timestamp,
       });
     }
     if (irResult.didReset) statsRef.current.referenceResets++;
-
-    // ── Red ───────────────────────────────────────────────────────────────
-    const redResult = redFilter.current.process(rawRed, strategy);
     if (redResult.isSpike) {
       statsRef.current.spikesRed++;
       onSpikeRef.current?.({
         channel: "red",
         rawValue: rawRed,
         referenceMedian: redResult.referenceMedian,
-        replacedWith: redResult.cleaned,
+        replacedWith: redResult.emit[0] ?? 0,
         timestamp,
       });
     }
-
-    // ── Green (optional channel) ───────────────────────────────────────────
-    // Fall back to IR if green is missing / 0 (some rings omit green).
-    const effectiveGreen = rawGreen != null && rawGreen > 0 ? rawGreen : rawIr;
-    const greenResult = greenFilter.current.process(effectiveGreen, strategy);
     if (greenResult.isSpike) {
       statsRef.current.spikesGreen++;
       onSpikeRef.current?.({
         channel: "green",
         rawValue: effectiveGreen,
         referenceMedian: greenResult.referenceMedian,
-        replacedWith: greenResult.cleaned,
+        replacedWith: greenResult.emit[0] ?? 0,
         timestamp,
       });
     }
 
-    // ── Build cleaned sample ──────────────────────────────────────────────
-    const cleanedSample: PPGSample = {
-      ir: irResult.cleaned,
-      red: redResult.cleaned,
-      green: greenResult.cleaned,
-      timestamp,
-    };
+    // ── Zip and emit ──────────────────────────────────────────────────────
+    // All three channels must agree on emit length (they always will because
+    // they receive the same spike pattern, but we guard with Math.min).
+    const emitCount = Math.min(
+      irResult.emit.length,
+      redResult.emit.length,
+      greenResult.emit.length,
+    );
 
-    // ── Emit via callback AND return to caller ────────────────────────────
-    onCleanRef.current(cleanedSample);
-    return cleanedSample;
+    // Nothing to emit this cycle (lerp is buffering a spike run)
+    if (emitCount === 0) return null;
+
+    let lastEmitted: PPGSample | null = null;
+
+    for (let i = 0; i < emitCount; i++) {
+      const sample: PPGSample = {
+        ir: irResult.emit[i],
+        red: redResult.emit[i],
+        green: greenResult.emit[i],
+        timestamp: irResult.timestamps[i], // per-sample timestamp from lerp queue
+      };
+      onCleanRef.current(sample);
+      lastEmitted = sample;
+    }
+
+    return lastEmitted;
   }, []); // no deps — all mutable state lives in refs
 
   // ── resetStream ──────────────────────────────────────────────────────────

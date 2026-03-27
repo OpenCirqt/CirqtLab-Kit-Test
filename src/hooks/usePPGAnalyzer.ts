@@ -251,44 +251,27 @@ function removeSpikesMutating(
 /**
  * FFT-based dominant frequency in the BPM band.
  *
- * Returns the estimated BPM and a confidence metric [0, 1].
- * Returns null when the signal is too noisy to produce a reliable estimate —
- * the caller should hold the last known good value in that case.
+ * Returns { bpm, confidence } or null when the window is too noisy.
  *
- * Key improvements over a naive peak-pick:
- *
- * 1. Peak-to-noise ratio (PNR) guard
- *    The raw peak magnitude is compared against the median magnitude of the
- *    rest of the band.  If the peak does not stand at least PNR_MIN times
- *    above the noise floor, the window is too noisy → return null.
- *
- * 2. Harmonic promotion
- *    After finding the dominant peak, we check whether a harmonic (2× or 3×
- *    the candidate frequency) carries more energy than the candidate itself.
- *    If so, the candidate is likely a subharmonic (e.g. 46 bpm when the real
- *    HR is 92 bpm) and we promote the harmonic to the final estimate.
- *    Promotion only fires when the harmonic bin falls within the valid BPM
- *    range, has significantly more energy than the candidate, and the
- *    promoted BPM is physiologically plausible.
- *
- * 3. Parabolic interpolation
- *    Sub-bin frequency precision after the integer peak-pick.
+ * Takes an optional `anchorBpm` — the last known good BPM from the
+ * stabilisation layer.  This is used to make harmonic promotion context-aware:
+ * promotion only fires when the raw candidate is suspiciously far from the
+ * anchor AND the harmonic lands close to it.  Without the anchor, promotion
+ * can accidentally double a correct fundamental (89 → 178).
  */
 function fftBPM(
   signal: number[],
   sampleRateHz: number,
   minBPM: number,
   maxBPM: number,
+  anchorBpm: number | null = null, // last known good BPM, null during bootstrap
 ): { bpm: number; confidence: number } | null {
   const n = signal.length;
   if (n < 8) return null;
 
-  // Zero-pad to 4× next power-of-two for finer frequency resolution.
-  // At 25 Hz over 9 s (225 samples) this gives fftSize=1024,
-  // freqRes = 25/1024 ≈ 0.024 Hz ≈ 1.5 bpm per bin — good enough for HR.
   const fftSize = Math.max(nextPow2(n) * 4, 1024);
 
-  // DC removal + Hann window (lower sidelobe leakage than Hamming)
+  // DC removal + Hann window
   const dcMean = signal.reduce((s, v) => s + v, 0) / n;
   const padded = new Array<number>(fftSize).fill(0);
   for (let i = 0; i < n; i++) {
@@ -296,13 +279,11 @@ function fftBPM(
     padded[i] = (signal[i] - dcMean) * hann;
   }
 
-  // Run FFT
   const fft = new FFT(fftSize);
   const complexOut = fft.createComplexArray();
   fft.realTransform(complexOut, padded);
   fft.completeSpectrum(complexOut);
 
-  // Magnitude spectrum (first half — real signal is conjugate symmetric)
   const halfSize = fftSize / 2;
   const mag = new Float64Array(halfSize);
   for (let i = 0; i < halfSize; i++) {
@@ -311,13 +292,12 @@ function fftBPM(
     mag[i] = Math.sqrt(re * re + im * im);
   }
 
-  // Convert BPM limits → FFT bin indices
   const freqResHz = sampleRateHz / fftSize;
   const minBin = Math.max(1, Math.ceil(minBPM / 60 / freqResHz));
   const maxBin = Math.min(halfSize - 2, Math.floor(maxBPM / 60 / freqResHz));
   if (minBin >= maxBin) return null;
 
-  // ── 1. Find the dominant peak bin in the physiological band ─────────────
+  // ── 1. Dominant peak ─────────────────────────────────────────────────────
   let peakBin = minBin;
   let peakMag = mag[minBin];
   for (let i = minBin + 1; i <= maxBin; i++) {
@@ -327,41 +307,52 @@ function fftBPM(
     }
   }
 
-  // ── 1a. Peak-to-noise ratio guard ───────────────────────────────────────
-  // Compute median magnitude of the band excluding a ±3-bin window around
-  // the peak (so the peak itself doesn't inflate the noise estimate).
-  const PEAK_EXCLUSION = 3;
+  // ── 2. Peak-to-noise ratio guard ─────────────────────────────────────────
+  // Exclude ±4 bins around the peak when computing the noise floor so the
+  // peak itself does not inflate the estimate.
+  const PEAK_EXCLUSION = 4;
   const noiseSamples: number[] = [];
   for (let i = minBin; i <= maxBin; i++) {
     if (Math.abs(i - peakBin) > PEAK_EXCLUSION) noiseSamples.push(mag[i]);
   }
   const noiseFloor = noiseSamples.length > 0 ? median(noiseSamples) : 0;
 
-  // Minimum ratio of peak to noise floor required to trust the estimate.
-  // Empirically: clean resting PPG gives PNR 4–10; motion gives PNR < 2.
-  const PNR_MIN = 2.5;
-  if (noiseFloor > 0 && peakMag / noiseFloor < PNR_MIN) {
-    // Too noisy — caller holds last known good value
-    return null;
-  }
+  // Raised from 2.5 → 3.5.  Requires a cleaner, more unambiguous peak.
+  // This is the primary gate against the noisy 89→40→180 oscillation:
+  // borderline windows now return null and the stabiliser holds the last
+  // good value instead of accepting a wandering peak.
+  const PNR_MIN = 3.5;
+  if (noiseFloor > 0 && peakMag / noiseFloor < PNR_MIN) return null;
 
-  // ── 2. Harmonic promotion ────────────────────────────────────────────────
-  // If the dominant peak is a subharmonic (e.g. 46 bpm ≈ 0.77 Hz) the real
-  // HR (92 bpm ≈ 1.53 Hz) will appear as the 2nd harmonic with higher or
-  // comparable energy.  Check 2× and 3× the candidate frequency.
+  // ── 3. Context-aware harmonic promotion ──────────────────────────────────
   //
-  // Promotion conditions (all must hold):
-  //   a) Harmonic bin falls within the valid BPM range
-  //   b) Harmonic magnitude > HARMONIC_RATIO × candidate magnitude
-  //   c) Harmonic PNR also clears PNR_MIN (not just another noise peak)
-  const HARMONIC_RATIO = 0.7; // harmonic needs ≥ 70 % of candidate energy to promote
+  // The fundamental problem with unconditional promotion:
+  //   If the real HR is 89 bpm and the FFT peak happens to land there,
+  //   promotion checks 178 bpm (2×89). If 178 also has some energy it gets
+  //   promoted — turning a correct 89 into a wrong 178.
+  //
+  // Fix: promotion is only attempted when the raw candidate looks like a
+  // subharmonic relative to the anchor.
+  //
+  //   "Looks like a subharmonic" means:
+  //     candidate × 2 (or × 3) is within ANCHOR_TOLERANCE of anchorBpm
+  //     AND candidate itself is far from anchorBpm (> SUBHARMONIC_GAP)
+  //
+  // If there is no anchor yet (bootstrap), fall back to energy-only promotion
+  // but with a stricter ratio (harmonic must dominate, not just be close).
+
+  const ANCHOR_TOLERANCE = 15; // bpm — how close harmonic must be to anchor
+  const SUBHARMONIC_GAP = 20; // bpm — how far candidate must be from anchor
+  const HARMONIC_RATIO_ANCHORED = 0.6; // harmonic needs 60% of candidate energy (anchor mode)
+  const HARMONIC_RATIO_BOOTSTRAP = 1.1; // harmonic must EXCEED candidate energy (no anchor)
+
   let finalPeakBin = peakBin;
 
   for (const multiplier of [2, 3]) {
     const harmonicBin = Math.round(peakBin * multiplier);
     if (harmonicBin < minBin || harmonicBin > maxBin) continue;
 
-    // Look for the local maximum within ±2 bins of the expected harmonic
+    // Local max within ±2 bins
     let hBin = harmonicBin;
     let hMag = mag[harmonicBin];
     for (let d = -2; d <= 2; d++) {
@@ -372,17 +363,41 @@ function fftBPM(
       }
     }
 
-    const harmonicPNR = noiseFloor > 0 ? hMag / noiseFloor : 0;
+    const hPNR = noiseFloor > 0 ? hMag / noiseFloor : 0;
+    if (hPNR < PNR_MIN) continue; // harmonic itself must be above noise floor
 
-    if (hMag >= peakMag * HARMONIC_RATIO && harmonicPNR >= PNR_MIN) {
-      // Promote: the harmonic is the real fundamental
-      finalPeakBin = hBin;
-      peakMag = hMag; // use harmonic magnitude for confidence calc
-      break; // prefer 2nd harmonic over 3rd
+    const rawCandidateBpm = peakBin * freqResHz * 60;
+    const harmonicBpm = hBin * freqResHz * 60;
+
+    if (anchorBpm !== null) {
+      // Anchor-guided mode: only promote when candidate looks like a subharmonic
+      const candidateIsFarFromAnchor =
+        Math.abs(rawCandidateBpm - anchorBpm) > SUBHARMONIC_GAP;
+      const harmonicIsCloseToAnchor =
+        Math.abs(harmonicBpm - anchorBpm) < ANCHOR_TOLERANCE;
+      const harmonicHasEnoughEnergy = hMag >= peakMag * HARMONIC_RATIO_ANCHORED;
+
+      if (
+        candidateIsFarFromAnchor &&
+        harmonicIsCloseToAnchor &&
+        harmonicHasEnoughEnergy
+      ) {
+        finalPeakBin = hBin;
+        peakMag = hMag;
+        break;
+      }
+    } else {
+      // Bootstrap mode (no anchor): only promote if the harmonic genuinely
+      // dominates — prevents accidental promotion of correct fundamentals.
+      if (hMag >= peakMag * HARMONIC_RATIO_BOOTSTRAP) {
+        finalPeakBin = hBin;
+        peakMag = hMag;
+        break;
+      }
     }
   }
 
-  // ── 3. Parabolic interpolation for sub-bin accuracy ─────────────────────
+  // ── 4. Parabolic interpolation ───────────────────────────────────────────
   let refinedBin = finalPeakBin;
   if (finalPeakBin > minBin && finalPeakBin < maxBin) {
     const alpha = mag[finalPeakBin - 1];
@@ -395,11 +410,9 @@ function fftBPM(
   }
 
   const bpm = refinedBin * freqResHz * 60;
-
-  // Sanity-check the final BPM is within range (interpolation can nudge it out)
   if (bpm < minBPM || bpm > maxBPM) return null;
 
-  // ── Confidence: peak power fraction of total band power ─────────────────
+  // ── 5. Confidence ────────────────────────────────────────────────────────
   let bandPower = 0;
   for (let i = minBin; i <= maxBin; i++) bandPower += mag[i] * mag[i];
   const confidence = bandPower > 0 ? (peakMag * peakMag) / bandPower : 0;
@@ -492,6 +505,10 @@ export function usePPGAnalyzer(config: PPGAnalyzerConfig = {}) {
   const spo2HistoryRef = useRef<number[]>([]); // recent valid SpO2 readings
   const lastAnalysisRef = useRef<number>(0); // timestamp of last analysis run
   const consecutiveLowConfRef = useRef<number>(0); // motion / noise run counter
+  // Provisional re-lock buffer: new estimates after a noisy stretch must
+  // agree N times before displacing the existing anchor.
+  const provisionalBufRef = useRef<number[]>([]); // candidate values accumulating
+  const PROVISIONAL_REQUIRED = 3; // agreements needed to commit
 
   // ── Exposed state (triggers re-render on new results) ──
   const [analysis, setAnalysis] = useState<PPGAnalysis>(INITIAL_ANALYSIS);
@@ -596,71 +613,64 @@ export function usePPGAnalyzer(config: PPGAnalyzerConfig = {}) {
       bpmSignal = irClean;
     }
 
-    // 10. FFT-based raw BPM estimate
-    const fftResult = fftBPM(bpmSignal, sampleRate, cfg.minBPM, cfg.maxBPM);
+    // 10. FFT — pass current anchor so harmonic promotion is context-aware
+    const anchorBpm =
+      bpmHistoryRef.current.length >= 2 ? median(bpmHistoryRef.current) : null;
+    const fftResult = fftBPM(
+      bpmSignal,
+      sampleRate,
+      cfg.minBPM,
+      cfg.maxBPM,
+      anchorBpm,
+    );
 
     // 11. BPM temporal stabilisation
     //
-    // Four problems fixed here vs the naive approach:
-    //
-    // A) Bad early anchor
-    //    The FFT window is only partially filled in the first ~4 s.
-    //    Frequency resolution is poor — the peak often lands on a subharmonic
-    //    (e.g. 46 bpm when real HR is 92). We guard this by requiring the
-    //    buffer to be ≥ 80 % full before pushing ANY estimate into history.
-    //    Until then we still output the raw FFT estimate so the UI is not
-    //    blank, but we do not let it anchor the history.
-    //
-    // B) Confidence-weighted history
-    //    Low-confidence estimates (noisy window, motion) are admitted to
-    //    history only if they are close to the current median. High-confidence
-    //    estimates are still subject to the jump guard — we raise the
-    //    override bar so a single loud-but-wrong FFT peak cannot blow away
-    //    a good history.
-    //
-    // C) Motion recovery flush
-    //    We track consecutive low-confidence windows. When confidence returns
-    //    after several bad windows we flush the stale history so the jump
-    //    guard does not prevent re-locking onto the true post-motion HR.
-    //
-    // D) Confidence-gated jump guard override
-    //    The old override fired when confidence ≥ 0.65 regardless of jump
-    //    size — a high-confidence subharmonic peak could replace 87 bpm with
-    //    46 bpm. Now the override only fires when confidence ≥ 0.80 AND the
-    //    jump is ≤ 2× bpmJumpThreshold (not unlimited).
+    // A) Bad early anchor     — require 80 % window fill before writing to history.
+    // B) Confidence-weighted  — output is weighted mean of history.
+    // C) Noisy-stretch hold   — FFT null → hold last good value, increment counter.
+    //                           NO flush: destroying good history was the root cause
+    //                           of the 89→40→89 bounce (flush → bootstrap → 40
+    //                           accepted freely → harmonic check rejects real 89).
+    // D) Harmonic artefact    — reject estimates that are ½×, 2×, ⅓×, 3× of anchor.
+    // E) Provisional re-lock  — large jumps that are NOT artefacts accumulate in a
+    //                           provisional buffer. They displace the anchor only
+    //                           after PROVISIONAL_REQUIRED consecutive agreeing
+    //                           estimates. One bad FFT cycle can never hijack the
+    //                           anchor on its own.
+    // F) Jump guard           — small jumps (≤ threshold) are always accepted directly.
 
     const history = bpmHistoryRef.current;
     const confHist = confidenceHistoryRef.current;
+    const provBuf = provisionalBufRef.current;
 
-    // Is the window mature enough to trust for anchoring?
     const windowFill = durationSec / cfg.windowSeconds;
     const windowIsMature = windowFill >= 0.8;
+
+    // ── D) Harmonic artefact check ───────────────────────────────────────
+    // Returns true when candidate is a harmonic/subharmonic of anchor.
+    // Ratios checked: ½ (sub), ⅓ (sub), 2× (2nd harmonic), 3× (3rd harmonic).
+    const HARMONIC_TOLERANCE = 12; // bpm
+    function isHarmonicArtefact(candidate: number, anchor: number): boolean {
+      for (const ratio of [0.5, 2.0, 1 / 3, 3.0]) {
+        if (Math.abs(candidate - anchor * ratio) < HARMONIC_TOLERANCE)
+          return true;
+      }
+      return false;
+    }
 
     let finalBpm: number | null = null;
 
     if (fftResult) {
       const { bpm: rawBpm, confidence } = fftResult;
 
-      // ── C) Motion / noise run counter ──────────────────────────────────
+      // ── C) Track noisy stretches (no flush) ──────────────────────────
       const LOW_CONF_THRESHOLD = 0.25;
       if (confidence < LOW_CONF_THRESHOLD) {
         consecutiveLowConfRef.current++;
+        // Clear provisional buffer — noisy cycle breaks the agreement run
+        provBuf.length = 0;
       } else {
-        // Signal quality is returning after a noisy stretch — flush stale
-        // history so the jump guard does not block re-lock.
-        // Only flush if we actually had several bad windows AND history is
-        // anchored far from where the FFT now points.
-        const hadLongNoisyStretch = consecutiveLowConfRef.current >= 4;
-        const histMedian = history.length > 0 ? median(history) : null;
-        const farFromHistory =
-          histMedian !== null &&
-          Math.abs(rawBpm - histMedian) > cfg.bpmJumpThreshold;
-
-        if (hadLongNoisyStretch && farFromHistory) {
-          // Clear history — let the next few estimates re-establish the anchor
-          history.length = 0;
-          confHist.length = 0;
-        }
         consecutiveLowConfRef.current = 0;
       }
 
@@ -669,28 +679,62 @@ export function usePPGAnalyzer(config: PPGAnalyzerConfig = {}) {
         const jumpFromMedian = Math.abs(rawBpm - recentMedian);
         const jumpIsSmall = jumpFromMedian <= cfg.bpmJumpThreshold;
 
-        // ── D) Tightened confidence override ───────────────────────────
-        // Requires very high confidence AND a moderate jump (not unlimited).
-        // Prevents a loud subharmonic from blowing away good history.
-        const peakIsStrong =
-          confidence >= 0.8 && jumpFromMedian <= cfg.bpmJumpThreshold * 2;
-
-        if (jumpIsSmall || peakIsStrong) {
-          finalBpm = rawBpm;
-        } else {
-          // Suspect estimate — hold the smoothed value, skip history update
+        // ── D) Harmonic artefact? → always hold, clear provisional ───
+        if (isHarmonicArtefact(rawBpm, recentMedian)) {
           finalBpm = recentMedian;
+          provBuf.length = 0; // artefact breaks any accumulating re-lock
+
+          // ── F) Small jump → accept directly ──────────────────────────
+        } else if (jumpIsSmall) {
+          finalBpm = rawBpm;
+          provBuf.length = 0; // small jump means we're at the anchor; reset
+
+          // ── E) Large non-artefact jump → provisional re-lock ─────────
+        } else {
+          // Could be a real HR change or a stray FFT result.
+          // Accumulate in provisional buffer. The buffer resets whenever:
+          //   • a different value arrives (disagreement)
+          //   • an artefact or noisy cycle arrives (above)
+          //   • a small jump arrives (we're back at anchor)
+          const lastProv =
+            provBuf.length > 0 ? provBuf[provBuf.length - 1] : null;
+          const provAgrees =
+            lastProv !== null &&
+            Math.abs(rawBpm - lastProv) <= cfg.bpmJumpThreshold;
+
+          if (provAgrees || provBuf.length === 0) {
+            provBuf.push(rawBpm);
+          } else {
+            // New disagreeing value — restart the provisional run
+            provBuf.length = 0;
+            provBuf.push(rawBpm);
+          }
+
+          if (provBuf.length >= PROVISIONAL_REQUIRED) {
+            // Enough agreeing estimates — commit the new anchor
+            finalBpm = median(provBuf);
+            provBuf.length = 0;
+            // Evict the oldest history entries to accelerate re-anchoring
+            const evict = Math.min(3, history.length);
+            history.splice(0, evict);
+            confHist.splice(0, evict);
+          } else {
+            // Not enough agreement yet — hold current anchor
+            finalBpm = recentMedian;
+          }
         }
       } else {
-        // Bootstrap: history is empty or has only 1 entry — accept freely
-        finalBpm = rawBpm;
+        // ── Bootstrap (history empty / 1 entry) ──────────────────────
+        // Even here, reject obvious artefacts relative to the single
+        // existing entry so a stray early reading can't anchor badly.
+        if (history.length === 1 && isHarmonicArtefact(rawBpm, history[0])) {
+          finalBpm = history[0];
+        } else {
+          finalBpm = rawBpm;
+        }
       }
 
-      // ── A + B) Gate history writes ──────────────────────────────────────
-      // Only push into history when:
-      //   • The window is mature (≥ 80 % full) — avoids bad early anchor
-      //   • finalBpm was freshly accepted (not a held recentMedian)
-      //   • The estimate has meaningful confidence
+      // ── A + B) Gate history writes ──────────────────────────────────
       const estimateWasAccepted = finalBpm === rawBpm;
       const MIN_CONF_TO_RECORD = 0.2;
 
@@ -707,8 +751,9 @@ export function usePPGAnalyzer(config: PPGAnalyzerConfig = {}) {
         }
       }
     } else if (history.length > 0) {
-      // FFT failed — hold last known good value
+      // ── C) FFT null — hold last known good, clear provisional ────────
       finalBpm = median(history);
+      provBuf.length = 0;
       consecutiveLowConfRef.current++;
     }
 
@@ -776,6 +821,7 @@ export function usePPGAnalyzer(config: PPGAnalyzerConfig = {}) {
     bpmHistoryRef.current = [];
     confidenceHistoryRef.current = [];
     spo2HistoryRef.current = [];
+    provisionalBufRef.current = [];
     lastAnalysisRef.current = 0;
     consecutiveLowConfRef.current = 0;
     setAnalysis(INITIAL_ANALYSIS);
