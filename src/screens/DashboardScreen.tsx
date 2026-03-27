@@ -8,7 +8,7 @@ import {
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as FileSystem from "expo-file-system";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
@@ -34,6 +34,7 @@ import {
 } from "../features/ble/bleSlice";
 import useAppPermission from "../hooks/useAppPermission";
 import { useBleLiveStream } from "../hooks/useBleLiveStream";
+import { PPGSample, usePPGAnalyzer } from "../hooks/usePPGAnalyzer";
 import { usePPGStream } from "../hooks/usePPGStream";
 import { DashboardRootStackParamList } from "../navigations/DashboardNavigator";
 import { RootTabParamList } from "../navigations/TabNavigator";
@@ -48,8 +49,6 @@ import {
 import { defaultFFTConfig, FFTConfig, FFTPresets } from "../utils/fftConfig";
 import { transformToFrequencyDomain } from "../utils/fftUtils";
 import { MaxBufferSize, SensorParameter } from "../utils/indexRange";
-// import { AnalysisResult, PPGAnalyzer } from "../utils/ppgAnalyzer";
-import { PPGAnalysisResult, usePPGAnalyzer } from "../hooks/usePPGAnalyzer";
 import { px } from "../utils/setSize";
 
 type DashboardScreenProp = NativeStackNavigationProp<
@@ -133,13 +132,6 @@ const buildDataSets = (
   });
 };
 
-// initialize PPG analyzer
-// let ppgAnalyzer: PPGAnalyzer | undefined = undefined;
-// // if (Platform.OS === "android") {
-// // TODO: make the sample rate dynamic
-// ppgAnalyzer = new PPGAnalyzer({ windowSec: 10 });
-// }
-
 const DashboardScreen = () => {
   // from redux store
   const connectedDevice = useAppSelector((state) => state.ble.peripheral);
@@ -156,7 +148,6 @@ const DashboardScreen = () => {
   // graph
   const cachedData = useRef<number[][]>([]);
   const graphUpdateTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { processSample, reset } = usePPGStream();
 
   // stats
   const graphComputeTimeRef = useRef<number>(0);
@@ -187,17 +178,51 @@ const DashboardScreen = () => {
   // autoConnect
   const hasTried = useRef(false);
 
-  // ppg analyzer
-  // const [ppgAnalysisResult, setPpgAnalysisResult] =
-  //   useState<AnalysisResult | null>(null);
   const cachedPpgData = useRef<number[][]>([]);
   const ppgDataUpdateTimer = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
-  const { analyze, reset: resetAnalyzer } = usePPGAnalyzer();
-  const [result, setResult] = useState<PPGAnalysisResult | null>(null);
-  const lastAnalysisRef = useRef<number>(0);
-  const latestResultRef = useRef<PPGAnalysisResult | null>(null);
+
+  const {
+    addSample,
+    analysis,
+    reset: resetAnalyzer,
+  } = usePPGAnalyzer({
+    windowSeconds: 9,
+    bpmChannel: "ir",
+    minBPM: 40,
+    maxBPM: 200,
+    bpmHistorySize: 6,
+    bpmJumpThreshold: 20,
+    bpmConfidenceOverrideThreshold: 0.65,
+    analysisIntervalMs: 500,
+    skipSpikeFilter: true, // ← pre-cleaned by usePPGStream
+  });
+
+  const { addRawPacket, resetStream } = usePPGStream({
+    spikeRatioThreshold: 3.0, // >3× the reference median  → spike
+    spikeAbsoluteThreshold: 500, // AND >500 ADC units off     → spike
+    referenceWindowSize: 12, // last 12 accepted samples   (~480 ms @ 25 Hz)
+    maxConsecutiveSpikes: 8, // 8 straight rejections      → reset reference
+    replacementStrategy: "hold",
+
+    onCleanSample: useCallback(
+      (sample: PPGSample) => {
+        // → FFT analyzer
+        addSample(sample);
+        // → waveform display buffer
+      },
+      [addSample],
+    ),
+
+    onSpike: useCallback(() => {}, []),
+  });
+
+  const analysisRef = useRef(analysis);
+
+  useEffect(() => {
+    analysisRef.current = analysis;
+  }, [analysis]);
 
   // PPG unlock state
   const ppgUnlocked = useRef<boolean>(false);
@@ -343,6 +368,7 @@ const DashboardScreen = () => {
       ppgDataUpdateTimer.current = null;
     }
     resetAnalyzer();
+    resetStream();
     dispatch(setCollecting(false));
   };
 
@@ -429,19 +455,18 @@ const DashboardScreen = () => {
       const ir = incomingData[SensorParameter[DataTypes.PPG_IR][0]];
       const red = incomingData[SensorParameter[DataTypes.PPG_RED][0]];
       const green = incomingData[SensorParameter[DataTypes.PPG_GREEN][0]];
-      const rawPPG = [ir, red, green];
-      const clean = processSample(rawPPG);
-      if (!clean) return;
-
-      incomingData[SensorParameter[DataTypes.PPG_IR][0]] = clean.ir;
-      incomingData[SensorParameter[DataTypes.PPG_RED][0]] = clean.red;
-      incomingData[SensorParameter[DataTypes.PPG_GREEN][0]] = clean.green;
-
-      cachedData.current.push(data as number[]);
-
-      const now = Date.now();
-      lastAnalysisRef.current = now;
-      latestResultRef.current = analyze(clean); // write to ref, not state
+      const timestamp = incomingData[incomingData.length - 1];
+      const rawPPG = [ir, red, green, timestamp];
+      const clean = addRawPacket(rawPPG);
+      if (clean) {
+        incomingData[SensorParameter[DataTypes.PPG_IR][0]] = clean.ir;
+        incomingData[SensorParameter[DataTypes.PPG_RED][0]] = clean.red;
+        incomingData[SensorParameter[DataTypes.PPG_GREEN][0]] =
+          clean.green ?? 0;
+        cachedData.current.push(incomingData);
+      } else {
+        cachedData.current.push(data as number[]);
+      }
     },
     (data) => {
       elapsedStartRef.current = data;
@@ -527,23 +552,12 @@ const DashboardScreen = () => {
         dispatch(setCollecting(false));
       }
 
-      // conduct PPG analysis (only if unlocked)
-      if (ppgUnlocked.current) {
-        // const sampleRate =
-        //   elapsedTimeRef.current > 0
-        //     ? cachedData.current.length / elapsedTimeRef.current
-        //     : 60;
-        // ppgAnalyzer.setSampleRateHz(sampleRate);
+      cachedPpgData.current.push([
+        analysisRef.current.bpm ?? 0,
+        analysisRef.current.spo2 ?? 0,
+        Date.now(),
+      ]);
 
-        // const analysisResult = ppgAnalyzer.analyze();
-        // setPpgAnalysisResult(analysisResult);
-
-        cachedPpgData.current.push([
-          result?.bpm ?? 0,
-          result?.spo2 ?? 0,
-          Date.now(),
-        ]);
-      }
       // update buffer used
       bufferUsedSizeRef.current +=
         cachedPpgData.current.length *
@@ -553,17 +567,7 @@ const DashboardScreen = () => {
     }, 300);
 
     ppgDataUpdateTimer.current = setInterval(() => {
-      // if (cachedData.current.length > 0 && ppgAnalyzer) {
-      //   const data = cachedData.current[cachedData.current.length - 1];
-      //   ppgAnalyzer.push({
-      //     ir: data[SensorParameter[DataTypes.PPG_IR][0]],
-      //     red: data[SensorParameter[DataTypes.PPG_RED][0]],
-      //     green: data[SensorParameter[DataTypes.PPG_GREEN][0]],
-      //   });
-      // }
-      if (lastAnalysisRef.current) {
-        setResult(latestResultRef.current);
-      }
+      // to be removed soon
     }, 1000);
   };
 
@@ -659,9 +663,7 @@ const DashboardScreen = () => {
     cachedPpgData.current = [];
 
     // clear and reset PPG analysis
-    // setPpgAnalysisResult(null);
-    // ppgAnalyzer?.reset();
-    setResult(null);
+    resetStream();
     resetAnalyzer();
 
     // reset FFT mode
@@ -790,7 +792,7 @@ const DashboardScreen = () => {
     // if (Platform.OS === "android") {
     statCardPropsList.push({
       title: "Heart Rate",
-      value: ppgUnlocked.current ? result?.bpm : undefined,
+      value: ppgUnlocked.current ? analysis?.bpm : undefined,
       decimal: 2,
       unit: "bpm",
       locked: !ppgUnlocked.current,
@@ -799,7 +801,7 @@ const DashboardScreen = () => {
     });
     statCardPropsList.push({
       title: "SpO2",
-      value: ppgUnlocked.current ? result?.spo2 : undefined,
+      value: ppgUnlocked.current ? analysis?.spo2 : undefined,
       decimal: 2,
       unit: "%",
       locked: !ppgUnlocked.current,

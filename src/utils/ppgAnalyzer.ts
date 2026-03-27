@@ -1,3 +1,5 @@
+// TO BE DEPRECATED
+
 import FFT from "fft.js";
 
 export type PPGSample = {
