@@ -146,6 +146,21 @@ export interface PPGAnalyzerConfig {
    * Default: false  (internal filter runs — safe to use standalone)
    */
   skipSpikeFilter?: boolean;
+
+  /**
+   * Peak-to-noise ratio threshold for the FFT result to be trusted.
+   * The dominant spectral peak must be at least this many times stronger
+   * than the median noise floor of the BPM band.
+   *
+   * Higher → stricter, fewer nulls but may miss weak signals.
+   * Lower  → more permissive, fewer nulls but may accept noisy estimates.
+   *
+   * Android BLE burst delivery degrades spectral quality, so use a lower
+   * value on Android (2.5–3.0) vs iOS (3.0–3.5).
+   *
+   * Default: 3.0
+   */
+  fftPnrThreshold?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,6 +179,7 @@ const DEFAULTS: Required<PPGAnalyzerConfig> = {
   analysisIntervalMs: 500,
   bpmChannel: "ir",
   skipSpikeFilter: false,
+  fftPnrThreshold: 3.0,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -249,34 +265,91 @@ function removeSpikesMutating(
 }
 
 /**
+ * Resample a non-uniformly sampled signal onto a uniform time grid using
+ * linear interpolation.
+ *
+ * Android BLE delivers packets in bursts (e.g. 8 packets every 200 ms rather
+ * than 1 every 25 ms).  The resulting timestamp clustering means the signal
+ * is NOT uniformly sampled — FFT assumes it is, so spectral quality degrades.
+ * Resampling onto a uniform grid fixes this before the FFT runs.
+ *
+ * @param values     Raw signal values
+ * @param timestamps Corresponding hardware timestamps (ms), same length
+ * @param targetRate Desired uniform sample rate (Hz) — use the sliding-window
+ *                   average sample rate so no information is invented or lost
+ * @returns          Uniformly resampled signal
+ */
+function resampleUniform(
+  values: number[],
+  timestamps: number[],
+  targetRate: number,
+): number[] {
+  const n = values.length;
+  if (n < 2) return [...values];
+
+  const tStart = timestamps[0];
+  const tEnd = timestamps[n - 1];
+  const duration = (tEnd - tStart) / 1000; // seconds
+  const nOut = Math.max(2, Math.round(duration * targetRate));
+  const out = new Array<number>(nOut);
+
+  for (let i = 0; i < nOut; i++) {
+    const t = tStart + (i / (nOut - 1)) * (tEnd - tStart); // target time (ms)
+
+    // Binary search for the surrounding pair in the original timestamps
+    let lo = 0;
+    let hi = n - 2;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (timestamps[mid + 1] < t) lo = mid + 1;
+      else hi = mid;
+    }
+
+    const t0 = timestamps[lo];
+    const t1 = timestamps[lo + 1];
+    const dt = t1 - t0;
+    const alpha = dt > 0 ? (t - t0) / dt : 0;
+    out[i] = values[lo] + alpha * (values[lo + 1] - values[lo]);
+  }
+
+  return out;
+}
+
+/**
  * FFT-based dominant frequency in the BPM band.
  *
  * Returns { bpm, confidence } or null when the window is too noisy.
  *
  * Takes an optional `anchorBpm` — the last known good BPM from the
- * stabilisation layer.  This is used to make harmonic promotion context-aware:
- * promotion only fires when the raw candidate is suspiciously far from the
- * anchor AND the harmonic lands close to it.  Without the anchor, promotion
- * can accidentally double a correct fundamental (89 → 178).
+ * stabilisation layer.  Used to make harmonic promotion context-aware.
  */
 function fftBPM(
   signal: number[],
-  sampleRateHz: number,
+  timestamps: number[], // hardware timestamps (ms), parallel to signal
+  sampleRateHz: number, // sliding-window average sample rate
   minBPM: number,
   maxBPM: number,
-  anchorBpm: number | null = null, // last known good BPM, null during bootstrap
+  anchorBpm: number | null = null,
+  pnrThreshold: number = 3.0,
 ): { bpm: number; confidence: number } | null {
-  const n = signal.length;
+  if (signal.length < 8) return null;
+
+  // ── Uniform resampling ────────────────────────────────────────────────────
+  // Corrects for Android BLE burst delivery and any other source of uneven
+  // packet timing.  The target rate is the measured sliding-window average —
+  // this preserves the actual information content without inventing samples.
+  const resampled = resampleUniform(signal, timestamps, sampleRateHz);
+  const n = resampled.length;
   if (n < 8) return null;
 
   const fftSize = Math.max(nextPow2(n) * 4, 1024);
 
   // DC removal + Hann window
-  const dcMean = signal.reduce((s, v) => s + v, 0) / n;
+  const dcMean = resampled.reduce((s, v) => s + v, 0) / n;
   const padded = new Array<number>(fftSize).fill(0);
   for (let i = 0; i < n; i++) {
     const hann = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (n - 1)));
-    padded[i] = (signal[i] - dcMean) * hann;
+    padded[i] = (resampled[i] - dcMean) * hann;
   }
 
   const fft = new FFT(fftSize);
@@ -321,7 +394,7 @@ function fftBPM(
   // This is the primary gate against the noisy 89→40→180 oscillation:
   // borderline windows now return null and the stabiliser holds the last
   // good value instead of accepting a wandering peak.
-  const PNR_MIN = 3.5;
+  const PNR_MIN = pnrThreshold;
   if (noiseFloor > 0 && peakMag / noiseFloor < PNR_MIN) return null;
 
   // ── 3. Context-aware harmonic promotion ──────────────────────────────────
@@ -613,15 +686,18 @@ export function usePPGAnalyzer(config: PPGAnalyzerConfig = {}) {
       bpmSignal = irClean;
     }
 
-    // 10. FFT — pass current anchor so harmonic promotion is context-aware
+    // 10. FFT — pass timestamps for uniform resampling, anchor for harmonic promotion
     const anchorBpm =
       bpmHistoryRef.current.length >= 2 ? median(bpmHistoryRef.current) : null;
+    const bpmTimestamps = buf.map((s) => s.timestamp);
     const fftResult = fftBPM(
       bpmSignal,
+      bpmTimestamps,
       sampleRate,
       cfg.minBPM,
       cfg.maxBPM,
       anchorBpm,
+      cfg.fftPnrThreshold,
     );
 
     // 11. BPM temporal stabilisation
