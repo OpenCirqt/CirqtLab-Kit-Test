@@ -24,6 +24,7 @@ export interface BleState {
   autoReconnect: boolean;
   collecting: boolean;
   uploading: boolean;
+  bacCollecting: boolean;
   batteryLevel: number | null;
   batteryPowerState: BatteryPowerState | null;
   deviceInformation: DeviceInformation | null;
@@ -35,6 +36,7 @@ export const initialState: BleState = {
   autoReconnect: false,
   collecting: false,
   uploading: false,
+  bacCollecting: false,
   batteryLevel: null,
   batteryPowerState: null,
   deviceInformation: null,
@@ -56,7 +58,7 @@ export const bleSlice = createSlice({
       if (state.selectedDataPoints.includes(dataPoint)) return;
 
       state.selectedDataPoints = [...state.selectedDataPoints, dataPoint].slice(
-        -2
+        -2,
       );
     },
     clearSelectedDataPoints(state) {
@@ -74,13 +76,22 @@ export const bleSlice = createSlice({
     setUploading(state, action: PayloadAction<boolean>) {
       state.uploading = action.payload;
     },
+    setBacCollecting(state, action: PayloadAction<boolean>) {
+      state.bacCollecting = action.payload;
+    },
     setBatteryLevel(state, action: PayloadAction<number | null>) {
       state.batteryLevel = action.payload;
     },
-    setBatteryPowerState(state, action: PayloadAction<BatteryPowerState | null>) {
+    setBatteryPowerState(
+      state,
+      action: PayloadAction<BatteryPowerState | null>,
+    ) {
       state.batteryPowerState = action.payload;
     },
-    setDeviceInformation(state, action: PayloadAction<DeviceInformation | null>) {
+    setDeviceInformation(
+      state,
+      action: PayloadAction<DeviceInformation | null>,
+    ) {
       state.deviceInformation = action.payload;
     },
   },
@@ -94,6 +105,7 @@ export const {
   setDefaultDataPointsSelection,
   setCollecting,
   setUploading,
+  setBacCollecting,
   setBatteryLevel,
   setBatteryPowerState,
   setDeviceInformation,

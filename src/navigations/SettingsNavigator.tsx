@@ -27,6 +27,7 @@ const SettingsNavigator = () => {
         component={SettingsScreen}
         options={{
           headerLargeTitle: true,
+          headerTransparent: true,
         }}
       />
       <Stack.Screen

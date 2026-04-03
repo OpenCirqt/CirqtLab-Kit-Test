@@ -23,10 +23,12 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@shopify/react-native-skia": "^2.1.1",
     "@xinhao128/expo-nordic-dfu": "github:xinhao128/expo-nordic-dfu",
+    "axios": "^1.14.0",
     "expo": "~53.0.20",
     "expo-blur": "~14.1.5",
     "expo-build-properties": "~0.14.8",
     "expo-constants": "~17.1.7",
+    "expo-dev-client": "~5.2.4",
     "expo-document-picker": "~13.1.6",
     "expo-file-system": "~18.1.11",
     "expo-font": "~13.3.2",
@@ -52,12 +54,12 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
+    "react-native-svg": "^15.15.4",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "react-native-zip-archive": "^7.0.2",
     "react-redux": "^9.2.0",
-    "redux-persist": "^6.0.0",
-    "expo-dev-client": "~5.2.4"
+    "redux-persist": "^6.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

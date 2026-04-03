@@ -1,9 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigatorScreenParams } from "@react-navigation/native";
-import React from "react";
-import { View } from "react-native";
+import React, { useMemo } from "react";
+import { StyleSheet, View } from "react-native";
+import { useFeatureFlags } from "../contexts/FeatureFlagsContext";
 import { Colors } from "../theme";
+import BACNavigator, { BACRootStackParamList } from "./BACNavigator";
 import DashboardNavigator, {
   DashboardRootStackParamList,
 } from "./DashboardNavigator";
@@ -15,105 +17,124 @@ import SettingsNavigator, {
 export type RootTabParamList = {
   DashboardTab: NavigatorScreenParams<DashboardRootStackParamList>;
   DFUTab: NavigatorScreenParams<DFURootStackParamList>;
+  BACTab: NavigatorScreenParams<BACRootStackParamList>;
   SettingsTab: NavigatorScreenParams<SettingsRootStackParamList>;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-type TabType = {
-  name: string;
+type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
+
+type TabConfig = {
+  label: string;
   tabName: keyof RootTabParamList;
   screen: () => React.JSX.Element;
+  icon: IoniconName;
+  iconFocused: IoniconName;
 };
 
-const tabs: TabType[] = [
-  {
-    name: "Dashboard",
-    tabName: "DashboardTab",
-    screen: DashboardNavigator,
-  },
-  {
-    name: "DFU",
-    tabName: "DFUTab",
-    screen: DFUNavigator,
-  },
-  {
-    name: "Settings",
-    tabName: "SettingsTab",
-    screen: SettingsNavigator,
-  },
-];
-
-const iconBuilder = (name: string, focused: boolean) => {
-  let color = focused ? Colors.primary : Colors.disabled;
-  if (name === "Dashboard") {
-    return (
-      <Ionicons
-        name={focused ? "clipboard" : "clipboard-outline"}
-        size={20}
-        color={color}
-      />
-    );
-  } else if (name === "DFU") {
-    return (
-      <Ionicons
-        name={focused ? "cloud-upload" : "cloud-upload-outline"}
-        size={20}
-        color={color}
-      />
-    );
-  } else {
-    return (
-      <Ionicons
-        name={focused ? "settings" : "settings-outline"}
-        size={20}
-        color={color}
-      />
-    );
-  }
+type TabIconProps = {
+  icon: IoniconName;
+  iconFocused: IoniconName;
+  focused: boolean;
 };
+
+const TabIcon = ({ icon, iconFocused, focused }: TabIconProps) => (
+  <View
+    style={[
+      styles.iconContainer,
+      { borderTopColor: focused ? Colors.primary : Colors.white },
+    ]}
+  >
+    <Ionicons
+      name={focused ? iconFocused : icon}
+      size={20}
+      color={focused ? Colors.primary : Colors.disabled}
+    />
+  </View>
+);
 
 const TabNavigator = () => {
+  const { useExperimentalFeatures } = useFeatureFlags();
+
+  const TAB_CONFIGS = useMemo(
+    (): TabConfig[] => [
+      {
+        label: "Dashboard",
+        tabName: "DashboardTab",
+        screen: DashboardNavigator,
+        icon: "clipboard-outline",
+        iconFocused: "clipboard",
+      },
+      {
+        label: "DFU",
+        tabName: "DFUTab",
+        screen: DFUNavigator,
+        icon: "cloud-upload-outline",
+        iconFocused: "cloud-upload",
+      },
+      ...(useExperimentalFeatures
+        ? [
+            {
+              label: "BAC",
+              tabName: "BACTab",
+              screen: BACNavigator,
+              icon: "cafe-outline",
+              iconFocused: "cafe",
+            } satisfies TabConfig,
+          ]
+        : []),
+      {
+        label: "Settings",
+        tabName: "SettingsTab",
+        screen: SettingsNavigator,
+        icon: "settings-outline",
+        iconFocused: "settings",
+      },
+    ],
+    [useExperimentalFeatures],
+  );
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarLabelStyle: {
-          fontFamily: "Inter_500Medium",
-          color: Colors.black,
-        },
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      {tabs.map((tab) => {
-        return (
-          <Tab.Screen
-            key={tab.name + "Navigator"}
-            name={tab.tabName}
-            component={tab.screen}
-            options={{
-              tabBarIcon: ({ focused }) => {
-                return (
-                  <View
-                    style={{
-                      width: "100%",
-                      flex: 1,
-                      alignItems: "center",
-                      borderTopColor: focused ? Colors.primary : "#fff",
-                      borderTopWidth: 2,
-                      paddingTop: 3,
-                    }}
-                  >
-                    {iconBuilder(tab.name, focused)}
-                  </View>
-                );
-              },
-              tabBarLabel: tab.name,
-            }}
-          />
-        );
-      })}
+      {TAB_CONFIGS.map(({ label, tabName, screen, icon, iconFocused }) => (
+        <Tab.Screen
+          key={`${label}Navigator`}
+          name={tabName}
+          component={screen}
+          options={{
+            tabBarLabel: label,
+            tabBarIcon: ({ focused }) => (
+              <TabIcon
+                icon={icon}
+                iconFocused={iconFocused}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+      ))}
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: "100%",
+    flex: 1,
+    alignItems: "center",
+    borderTopWidth: 2,
+    paddingTop: 3,
+  },
+  tabBarLabel: {
+    fontFamily: "Inter_500Medium",
+    color: Colors.black,
+  },
+});
 
 export default TabNavigator;

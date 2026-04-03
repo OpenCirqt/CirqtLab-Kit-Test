@@ -28,6 +28,7 @@ import { DFURootStackParamList } from "../navigations/DFUNavigator";
 import { RootTabParamList } from "../navigations/TabNavigator";
 import { useAppDispatch, useAppSelector } from "../store";
 import { Colors } from "../theme";
+import { Status } from "../utils/constants";
 import { fs, px } from "../utils/setSize";
 
 type FirmwareFileType = {
@@ -82,15 +83,26 @@ const DFUScreen = () => {
   const { numOfPackets, disableResume, forceScanningLegacyDfu } =
     useAppSelector((state) => state.dfu);
   const isCollecting = useAppSelector((state) => state.ble.collecting);
+  const bacCollecting = useAppSelector((state) => state.ble.bacCollecting);
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalStatus, setModalStatus] = useState<Status>("idle");
   const isFocused = useIsFocused();
 
   useEffect(() => {
     if (isFocused) {
-      setModalVisible(isCollecting);
+      if (isCollecting) {
+        setModalVisible(true);
+        setModalStatus("collecting");
+      } else if (bacCollecting) {
+        setModalVisible(true);
+        setModalStatus("bacCollecting");
+      }
+    } else {
+      setModalVisible(false);
+      setModalStatus("idle");
     }
-  }, [isCollecting, isFocused]);
+  }, [isCollecting, bacCollecting, isFocused]);
 
   const dispatch = useAppDispatch();
 
@@ -107,7 +119,7 @@ const DFUScreen = () => {
         if (!file.name.toLowerCase().endsWith(".zip")) {
           Alert.alert(
             "Invalid File",
-            "Please select a valid firmware (.zip) file"
+            "Please select a valid firmware (.zip) file",
           );
           return;
         }
@@ -131,7 +143,7 @@ const DFUScreen = () => {
 
   const startDFU = async (
     peripheral: Peripheral | null,
-    firmwareFile?: FirmwareFileType
+    firmwareFile?: FirmwareFileType,
   ) => {
     if (!peripheral?.id || !firmwareFile?.uri) return;
 
@@ -260,7 +272,7 @@ const DFUScreen = () => {
                 weight="medium"
                 style={
                   connectedDevice?.name
-                    ? styles.stepContentText  
+                    ? styles.stepContentText
                     : styles.stepContentDefaultText
                 }
               >
@@ -331,7 +343,11 @@ const DFUScreen = () => {
                       <View style={styles.uploadStatusIconContainer}>
                         {icon}
                       </View>
-                      <TextUi tag="h4" weight="medium" style={styles.stepContentText}>
+                      <TextUi
+                        tag="h4"
+                        weight="medium"
+                        style={styles.stepContentText}
+                      >
                         {toSentenceCase(step)}
                       </TextUi>
                     </View>
@@ -349,12 +365,20 @@ const DFUScreen = () => {
         </View>
         <ModalUi
           visible={modalVisible}
-          status="collecting"
+          status={modalStatus}
           onNavigate={() => {
             setModalVisible(false);
-            navigation.navigate("DashboardTab", {
-              screen: "Dashboard",
-            });
+            setModalStatus("idle");
+
+            if (isCollecting) {
+              navigation.navigate("DashboardTab", {
+                screen: "Dashboard",
+              });
+            } else if (bacCollecting) {
+              navigation.navigate("BACTab", {
+                screen: "BAC",
+              });
+            }
           }}
         />
       </ScrollView>

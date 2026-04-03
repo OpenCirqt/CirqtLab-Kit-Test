@@ -6,7 +6,6 @@ import BluetoothConnectionScreen from "../screens/BluetoothConnectionScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import DataPointsSelection from "../screens/DataPointsSelection";
 import { Colors } from "../theme";
-import { px } from "../utils/setSize";
 
 export type DashboardRootStackParamList = {
   Dashboard: undefined;
@@ -41,6 +40,7 @@ const DashboardNavigator = () => {
           ),
           headerLargeTitle: true,
           headerTitle: "Dashboard",
+          headerTransparent: true,
         })}
       />
       <Stack.Screen
@@ -68,7 +68,10 @@ const DashboardNavigator = () => {
 
 const styles = StyleSheet.create({
   headerRightStyle: {
-    paddingRight: px(4),
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

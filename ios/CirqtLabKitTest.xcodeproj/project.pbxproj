@@ -8,25 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		27B99C832BC974C989431FE0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = ECD0CF71DA8E91E663FC69B8 /* PrivacyInfo.xcprivacy */; };
-		36BACC8805C91D1EC41F3255 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727594E04CDB0E6AFF8D6EEA /* ExpoModulesProvider.swift */; };
+		207BEF171DDEE1A0DB6F1766 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EC425C03B8F520463B0FE9A /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		71097F931AC93593C70602CE /* libPods-CirqtLabKitTest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7039A4F8A74EF79755E7FE70 /* libPods-CirqtLabKitTest.a */; };
+		9FD20600014134D492A49CEC /* libPods-CirqtLabKitTest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 62ABD72AA0BAC69DCAF5D171 /* libPods-CirqtLabKitTest.a */; };
+		B29BD6695C17D4B4B9FFA223 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 102B976BE14E356CEB493938 /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		102B976BE14E356CEB493938 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = CirqtLabKitTest/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* CirqtLabKitTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CirqtLabKitTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = CirqtLabKitTest/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = CirqtLabKitTest/Info.plist; sourceTree = "<group>"; };
-		7039A4F8A74EF79755E7FE70 /* libPods-CirqtLabKitTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CirqtLabKitTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		727594E04CDB0E6AFF8D6EEA /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-CirqtLabKitTest/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		2EC425C03B8F520463B0FE9A /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-CirqtLabKitTest/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		62ABD72AA0BAC69DCAF5D171 /* libPods-CirqtLabKitTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CirqtLabKitTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		74A753AA5CADAA934A548403 /* Pods-CirqtLabKitTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CirqtLabKitTest.release.xcconfig"; path = "Target Support Files/Pods-CirqtLabKitTest/Pods-CirqtLabKitTest.release.xcconfig"; sourceTree = "<group>"; };
+		9D8E1648B6522130D631F74D /* Pods-CirqtLabKitTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CirqtLabKitTest.debug.xcconfig"; path = "Target Support Files/Pods-CirqtLabKitTest/Pods-CirqtLabKitTest.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = CirqtLabKitTest/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		CE3823382343137437E9674D /* Pods-CirqtLabKitTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CirqtLabKitTest.release.xcconfig"; path = "Target Support Files/Pods-CirqtLabKitTest/Pods-CirqtLabKitTest.release.xcconfig"; sourceTree = "<group>"; };
-		D817BF950AFAAA014FBBD23D /* Pods-CirqtLabKitTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CirqtLabKitTest.debug.xcconfig"; path = "Target Support Files/Pods-CirqtLabKitTest/Pods-CirqtLabKitTest.debug.xcconfig"; sourceTree = "<group>"; };
-		ECD0CF71DA8E91E663FC69B8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = CirqtLabKitTest/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = CirqtLabKitTest/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* CirqtLabKitTest-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "CirqtLabKitTest-Bridging-Header.h"; path = "CirqtLabKitTest/CirqtLabKitTest-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				71097F931AC93593C70602CE /* libPods-CirqtLabKitTest.a in Frameworks */,
+				9FD20600014134D492A49CEC /* libPods-CirqtLabKitTest.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				ECD0CF71DA8E91E663FC69B8 /* PrivacyInfo.xcprivacy */,
+				102B976BE14E356CEB493938 /* PrivacyInfo.xcprivacy */,
 			);
 			name = CirqtLabKitTest;
 			sourceTree = "<group>";
@@ -62,17 +62,9 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				7039A4F8A74EF79755E7FE70 /* libPods-CirqtLabKitTest.a */,
+				62ABD72AA0BAC69DCAF5D171 /* libPods-CirqtLabKitTest.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		813F4E498935A93F7CB523AB /* CirqtLabKitTest */ = {
-			isa = PBXGroup;
-			children = (
-				727594E04CDB0E6AFF8D6EEA /* ExpoModulesProvider.swift */,
-			);
-			name = CirqtLabKitTest;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -89,8 +81,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				94BCA18E1C672313035D8B57 /* Pods */,
-				FA3E7D445307870797A47795 /* ExpoModulesProviders */,
+				ADC6453FAF2BA1F9E2481735 /* Pods */,
+				A00AAA823CFF362DDAAC52CF /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -105,11 +97,27 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		94BCA18E1C672313035D8B57 /* Pods */ = {
+		8F8F148453E262C543C3974C /* CirqtLabKitTest */ = {
 			isa = PBXGroup;
 			children = (
-				D817BF950AFAAA014FBBD23D /* Pods-CirqtLabKitTest.debug.xcconfig */,
-				CE3823382343137437E9674D /* Pods-CirqtLabKitTest.release.xcconfig */,
+				2EC425C03B8F520463B0FE9A /* ExpoModulesProvider.swift */,
+			);
+			name = CirqtLabKitTest;
+			sourceTree = "<group>";
+		};
+		A00AAA823CFF362DDAAC52CF /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				8F8F148453E262C543C3974C /* CirqtLabKitTest */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		ADC6453FAF2BA1F9E2481735 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				9D8E1648B6522130D631F74D /* Pods-CirqtLabKitTest.debug.xcconfig */,
+				74A753AA5CADAA934A548403 /* Pods-CirqtLabKitTest.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -123,14 +131,6 @@
 			path = CirqtLabKitTest/Supporting;
 			sourceTree = "<group>";
 		};
-		FA3E7D445307870797A47795 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				813F4E498935A93F7CB523AB /* CirqtLabKitTest */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -139,13 +139,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "CirqtLabKitTest" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				3A412D0FC67329C548C2D59A /* [Expo] Configure project */,
+				52F442055EB74FE3EF3668FA /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				225BCB43B76264C53CB74070 /* [CP] Embed Pods Frameworks */,
+				152DFD01284902123EFCC7A0 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,7 +195,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				27B99C832BC974C989431FE0 /* PrivacyInfo.xcprivacy in Resources */,
+				B29BD6695C17D4B4B9FFA223 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,7 +239,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		225BCB43B76264C53CB74070 /* [CP] Embed Pods Frameworks */ = {
+		152DFD01284902123EFCC7A0 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -257,7 +257,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CirqtLabKitTest/Pods-CirqtLabKitTest-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3A412D0FC67329C548C2D59A /* [Expo] Configure project */ = {
+		52F442055EB74FE3EF3668FA /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -289,6 +289,7 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/RCT-Folly_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNCAsyncStorage/RNCAsyncStorage_resources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNSVG/RNSVGFilters.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
@@ -308,6 +309,7 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCT-Folly_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNCAsyncStorage_resources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNSVGFilters.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
@@ -332,7 +334,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				36BACC8805C91D1EC41F3255 /* ExpoModulesProvider.swift in Sources */,
+				207BEF171DDEE1A0DB6F1766 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -341,12 +343,12 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D817BF950AFAAA014FBBD23D /* Pods-CirqtLabKitTest.debug.xcconfig */;
+			baseConfigurationReference = 9D8E1648B6522130D631F74D /* Pods-CirqtLabKitTest.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CirqtLabKitTest/CirqtLabKitTest.entitlements;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 62J5ZU3Z38;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -354,7 +356,6 @@
 					"FB_SONARKIT_ENABLED=1",
 				);
 				INFOPLIST_FILE = CirqtLabKitTest/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -379,15 +380,14 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CE3823382343137437E9674D /* Pods-CirqtLabKitTest.release.xcconfig */;
+			baseConfigurationReference = 74A753AA5CADAA934A548403 /* Pods-CirqtLabKitTest.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = CirqtLabKitTest/CirqtLabKitTest.entitlements;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 62J5ZU3Z38;
 				INFOPLIST_FILE = CirqtLabKitTest/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

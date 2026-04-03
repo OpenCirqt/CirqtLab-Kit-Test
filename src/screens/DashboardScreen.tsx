@@ -27,6 +27,7 @@ import PermissionModalUi from "../components/common/PermissionModalUi";
 import PPGWarningModal from "../components/common/PPGWarningModal";
 import TextUi from "../components/common/TextUi";
 import StatCard, { StatCardProps } from "../components/dashboard/StatCard";
+import { useFeatureFlags } from "../contexts/FeatureFlagsContext";
 import {
   clearPeripheral,
   setAutoConnect,
@@ -178,10 +179,10 @@ const DashboardScreen = () => {
   // autoConnect
   const hasTried = useRef(false);
 
+  // collect ppg data
   const cachedPpgData = useRef<number[][]>([]);
-  const ppgDataUpdateTimer = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
+
+  const { useExperimentalFeatures } = useFeatureFlags();
 
   const {
     addSample,
@@ -204,15 +205,16 @@ const DashboardScreen = () => {
     spikeAbsoluteThreshold: 500, // AND >500 ADC units off     → spike
     referenceWindowSize: 12, // last 12 accepted samples   (~480 ms @ 25 Hz)
     maxConsecutiveSpikes: 8, // 8 straight rejections      → reset reference
-    replacementStrategy: "hold",
+    replacementStrategy: "lerp",
 
     onCleanSample: useCallback(
       (sample: PPGSample) => {
-        // → FFT analyzer
-        addSample(sample);
-        // → waveform display buffer
+        // FFT analyzer
+        if (useExperimentalFeatures) {
+          addSample(sample);
+        }
       },
-      [addSample],
+      [addSample, useExperimentalFeatures],
     ),
 
     onSpike: useCallback(() => {}, []),
@@ -363,10 +365,6 @@ const DashboardScreen = () => {
       clearInterval(graphUpdateTimer.current);
       graphUpdateTimer.current = null;
     }
-    if (ppgDataUpdateTimer.current != null) {
-      clearInterval(ppgDataUpdateTimer.current);
-      ppgDataUpdateTimer.current = null;
-    }
     resetAnalyzer();
     resetStream();
     dispatch(setCollecting(false));
@@ -377,7 +375,6 @@ const DashboardScreen = () => {
       dispatch(clearPeripheral());
       resetStates();
       graphUpdateTimer.current = null;
-      ppgDataUpdateTimer.current = null;
       await BleManager.disconnect(connectedDevice.id);
     }
   };
@@ -447,31 +444,25 @@ const DashboardScreen = () => {
   }, [bluetoothState, locationState, dispatch, connectedDevice]);
 
   // subscribes to device data updates
-  useBleLiveStream(
-    connectedDevice?.id,
-    collecting,
-    (data) => {
-      const incomingData = data as number[];
-      const ir = incomingData[SensorParameter[DataTypes.PPG_IR][0]];
-      const red = incomingData[SensorParameter[DataTypes.PPG_RED][0]];
-      const green = incomingData[SensorParameter[DataTypes.PPG_GREEN][0]];
-      const timestamp = incomingData[incomingData.length - 1];
-      const rawPPG = [ir, red, green, timestamp];
-      const clean = addRawPacket(rawPPG);
-      if (clean) {
-        incomingData[SensorParameter[DataTypes.PPG_IR][0]] = clean.ir;
-        incomingData[SensorParameter[DataTypes.PPG_RED][0]] = clean.red;
-        incomingData[SensorParameter[DataTypes.PPG_GREEN][0]] =
-          clean.green ?? 0;
-        cachedData.current.push(incomingData);
-      } else {
-        cachedData.current.push(data as number[]);
+  useBleLiveStream(connectedDevice?.id, collecting, (data) => {
+    if (!collecting) return;
+
+    const ir = data[SensorParameter[DataTypes.PPG_IR][0]];
+    const red = data[SensorParameter[DataTypes.PPG_RED][0]];
+    const green = data[SensorParameter[DataTypes.PPG_GREEN][0]];
+    const timestamp = data[data.length - 1];
+    const rawPPG = [ir, red, green, timestamp];
+    const clean = addRawPacket(rawPPG);
+    if (clean) {
+      data[SensorParameter[DataTypes.PPG_IR][0]] = clean.ir;
+      data[SensorParameter[DataTypes.PPG_RED][0]] = clean.red;
+      data[SensorParameter[DataTypes.PPG_GREEN][0]] = clean.green ?? 0;
+      if (elapsedStartRef.current === 0) {
+        elapsedStartRef.current = Date.now();
       }
-    },
-    (data) => {
-      elapsedStartRef.current = data;
-    },
-  );
+      cachedData.current.push(data);
+    }
+  });
 
   useEffect(() => {
     selectedDataPoint1Ref.current = selectedDataPoints[0];
@@ -545,11 +536,10 @@ const DashboardScreen = () => {
         (cachedData.current[0]?.length ? cachedData.current[0].length * 8 : 0);
 
       if (bufferUsedSizeRef.current > MaxBufferSize) {
-        Alert.alert(
-          "Warning",
-          "Buffer is full, stopping collection. Please save your data.",
-        );
-        dispatch(setCollecting(false));
+        handleStopCollection();
+
+        setModalVisible(true);
+        setModalStatus("overflowing");
       }
 
       cachedPpgData.current.push([
@@ -565,10 +555,6 @@ const DashboardScreen = () => {
           ? cachedPpgData.current[0].length * 8
           : 0);
     }, 300);
-
-    ppgDataUpdateTimer.current = setInterval(() => {
-      // to be removed soon
-    }, 1000);
   };
 
   const convertToCsv = (matrix: number[][]) => {
@@ -598,18 +584,18 @@ const DashboardScreen = () => {
 
       let doneMessage = `File ${rawFileDisplay} has been saved.`;
 
-      // if (Platform.OS === "android") {
-      const csvOutputString = convertToCsv(cachedPpgData.current);
+      if (useExperimentalFeatures) {
+        const csvOutputString = convertToCsv(cachedPpgData.current);
 
-      const outputFileDisplay = `${filePrefix}_output_${now}.csv`;
-      const outputFileUri = `${dir}${outputFileDisplay}`;
+        const outputFileDisplay = `${filePrefix}_output_${now}.csv`;
+        const outputFileUri = `${dir}${outputFileDisplay}`;
 
-      await FileSystem.writeAsStringAsync(outputFileUri, csvOutputString, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+        await FileSystem.writeAsStringAsync(outputFileUri, csvOutputString, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
 
-      doneMessage = `Files ${rawFileDisplay} and ${outputFileDisplay} have been saved`;
-      // }
+        doneMessage = `Files ${rawFileDisplay} and ${outputFileDisplay} have been saved`;
+      }
 
       setDoneMessage(doneMessage);
     } catch (err) {
@@ -651,11 +637,6 @@ const DashboardScreen = () => {
     // clear graph timer
     if (graphUpdateTimer.current !== null) {
       clearInterval(graphUpdateTimer.current);
-    }
-
-    // clear ppg analysis timer
-    if (ppgDataUpdateTimer.current !== null) {
-      clearInterval(ppgDataUpdateTimer.current);
     }
 
     // clear BLE emitted data
@@ -783,32 +764,35 @@ const DashboardScreen = () => {
       },
       {
         title: "Windows Fs",
-        value: cachedData.current.length / elapsedTimeRef.current || 0,
+        value:
+          elapsedTimeRef.current > 0
+            ? cachedData.current.length / elapsedTimeRef.current
+            : 0,
         decimal: 2,
         unit: "Hz",
       },
     ];
 
-    // if (Platform.OS === "android") {
-    statCardPropsList.push({
-      title: "Heart Rate",
-      value: ppgUnlocked.current ? analysis?.bpm : undefined,
-      decimal: 2,
-      unit: "bpm",
-      locked: !ppgUnlocked.current,
-      onUnlock: handlePPGUnlock,
-      onLock: handlePPGLock,
-    });
-    statCardPropsList.push({
-      title: "SpO2",
-      value: ppgUnlocked.current ? analysis?.spo2 : undefined,
-      decimal: 2,
-      unit: "%",
-      locked: !ppgUnlocked.current,
-      onUnlock: handlePPGUnlock,
-      onLock: handlePPGLock,
-    });
-    // }
+    if (useExperimentalFeatures) {
+      statCardPropsList.push({
+        title: "Heart Rate",
+        value: ppgUnlocked.current ? analysis?.bpm : undefined,
+        decimal: 2,
+        unit: "bpm",
+        locked: !ppgUnlocked.current,
+        onUnlock: handlePPGUnlock,
+        onLock: handlePPGLock,
+      });
+      statCardPropsList.push({
+        title: "SpO2",
+        value: ppgUnlocked.current ? analysis?.spo2 : undefined,
+        decimal: 2,
+        unit: "%",
+        locked: !ppgUnlocked.current,
+        onUnlock: handlePPGUnlock,
+        onLock: handlePPGLock,
+      });
+    }
 
     const itemsPerRow = statCardPropsList.length <= 4 ? 2 : 3;
     const itemWidth =
@@ -1032,6 +1016,10 @@ const DashboardScreen = () => {
           navigation.navigate("DFUTab", {
             screen: "DFU",
           });
+        }}
+        onConfirm={() => {
+          setModalStatus("idle");
+          setModalVisible(false);
         }}
         status={modalStatus}
         doneMessage={doneMessage}

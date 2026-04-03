@@ -1,65 +1,33 @@
 import { useEffect, useRef } from "react";
-import BleManager from "react-native-ble-manager"; // note: the trailing slash is important!
-import { RxUUID, ServiceUUID } from "../utils/UUIDs";
-const Buffer = require("buffer/").Buffer;
+import {
+  BleSubscriber,
+  useBleNotificationContext,
+} from "../contexts/BleNotificationContext";
 
 export const useBleLiveStream = (
   peripheralId: string | undefined,
   collecting: boolean,
-  onData: (data: any) => void,
-  onStart: (data: number) => void,
-) => {
-  const listenerRef = useRef<any>(null);
+  onData: (data: number[]) => void,
+): void => {
+  const { subscribe, setPeripheral } = useBleNotificationContext();
+
+  const onDataRef = useRef<(data: number[]) => void>(onData);
 
   useEffect(() => {
-    const stopNotification = async (peripheralId: string) => {
-      await BleManager.stopNotification(peripheralId, ServiceUUID, RxUUID);
-    };
-    if (!peripheralId || !collecting) {
-      if (peripheralId) {
-        stopNotification(peripheralId);
-      }
-      return;
-    }
+    onDataRef.current = onData;
+  }, [onData]);
 
-    const setup = async () => {
-      const charCallback = ({ value, peripheral, characteristic, service }) => {
-        const buffer = Buffer.from(value);
-        handleBLEDataIngest(buffer);
-      };
+  useEffect(() => {
+    if (peripheralId) setPeripheral(peripheralId);
+  }, [peripheralId, setPeripheral]);
 
-      const handleBLEDataIngest = (bytes: any) => {
-        // convert every 4 bytes to a float and add to data
-        const floatArray: number[] = [];
-        for (let i = 0; i < bytes.length; i += 4) {
-          const value = bytes.readFloatLE(i);
-          floatArray.push(value);
-        }
+  useEffect(() => {
+    if (!peripheralId || !collecting) return;
 
-        onData([...floatArray, Date.now()]);
-      };
-
-      try {
-        await BleManager.retrieveServices(peripheralId);
-        await BleManager.startNotification(peripheralId, ServiceUUID, RxUUID);
-
-        onStart(Date.now());
-
-        listenerRef.current =
-          BleManager.onDidUpdateValueForCharacteristic(charCallback);
-      } catch (e) {
-        console.warn("Live stream error:", e);
-      }
+    const subscriber: BleSubscriber = {
+      onData: (data) => onDataRef.current(data),
     };
 
-    setup();
-
-    return () => {
-      listenerRef.current?.remove();
-      BleManager.stopNotification(peripheralId, ServiceUUID, RxUUID).catch(
-        () => {},
-      );
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [peripheralId, collecting]);
+    return subscribe(subscriber);
+  }, [peripheralId, collecting, subscribe]);
 };

@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  SectionList,
-  StyleSheet,
-  View
-} from "react-native";
+import { ActivityIndicator, SectionList, StyleSheet, View } from "react-native";
 import type { Peripheral } from "react-native-ble-manager";
 import BleManager from "react-native-ble-manager";
 import ButtonUi from "../components/common/ButtonUi";
@@ -15,7 +10,7 @@ import { useBatteryMonitor } from "../hooks/useBatteryMonitor";
 import { useDeviceInfo } from "../hooks/useDeviceInfo";
 import { useAppDispatch, useAppSelector } from "../store";
 import { Colors } from "../theme";
-import { fs, px } from "../utils/setSize";
+import { px } from "../utils/setSize";
 import { ServiceUUID } from "../utils/UUIDs";
 
 const BluetoothConnectionScreen = () => {
@@ -24,8 +19,12 @@ const BluetoothConnectionScreen = () => {
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const connectedPeripheral = useAppSelector((state) => state.ble.peripheral);
   const batteryLevel = useAppSelector((state) => state.ble.batteryLevel);
-  const batteryPowerState = useAppSelector((state) => state.ble.batteryPowerState);
-  const deviceInformation = useAppSelector((state) => state.ble.deviceInformation);
+  const batteryPowerState = useAppSelector(
+    (state) => state.ble.batteryPowerState,
+  );
+  const deviceInformation = useAppSelector(
+    (state) => state.ble.deviceInformation,
+  );
 
   // Monitor battery level and device information for connected device
   useBatteryMonitor(connectedPeripheral?.id ?? null, !!connectedPeripheral);
@@ -34,7 +33,7 @@ const BluetoothConnectionScreen = () => {
   const connectedDevices = connectedPeripheral ? [connectedPeripheral] : [];
 
   const discoveredDevices = peripherals.filter(
-    (p) => connectedPeripheral?.id !== p.id
+    (p) => connectedPeripheral?.id !== p.id,
   );
 
   const sections = [
@@ -52,10 +51,10 @@ const BluetoothConnectionScreen = () => {
 
   useEffect(() => {
     const discoverListener = BleManager.onDiscoverPeripheral(
-      handleDiscoverPeripheral
+      handleDiscoverPeripheral,
     );
     const onStopScanListener = BleManager.onStopScan(() =>
-      setIsScanning(false)
+      setIsScanning(false),
     );
 
     scan();
@@ -195,7 +194,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: px(12),
   },
   listContent: {
-    margin: fs(16),
+    marginVertical: px(40),
+    marginHorizontal: px(16),
     flex: 1,
   },
   placeholderContainer: {

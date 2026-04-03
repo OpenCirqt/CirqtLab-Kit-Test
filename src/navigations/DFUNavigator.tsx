@@ -6,7 +6,6 @@ import BluetoothConnectionScreen from "../screens/BluetoothConnectionScreen";
 import DFUScreen from "../screens/DFUScreen";
 import DFUSettingsScreen from "../screens/DFUSettingsScreen";
 import { Colors } from "../theme";
-import { px } from "../utils/setSize";
 
 export type DFURootStackParamList = {
   DFU: undefined;
@@ -41,6 +40,7 @@ const DFUNavigator = () => {
           ),
           headerLargeTitle: true,
           headerTitle: "Firmware Upgrade",
+          headerTransparent: true,
         })}
       />
       <Stack.Screen
@@ -68,7 +68,10 @@ const DFUNavigator = () => {
 
 const styles = StyleSheet.create({
   headerRightStyle: {
-    paddingRight: px(4),
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

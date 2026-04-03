@@ -33,15 +33,20 @@ const bleTransform: Transform<
 > = createTransform(
   // transform state being persisted
   (inboundState) => {
-    const { collecting, uploading, ...rest } = inboundState;
+    const { collecting, uploading, bacCollecting, ...rest } = inboundState;
     return rest;
   },
   // transform state being rehydrated
   (outboundState) => {
     if (!outboundState) return bleInitialState;
-    return { ...outboundState, collecting: false, uploading: false }; // force reset on rehydrate
+    return {
+      ...outboundState,
+      collecting: false,
+      uploading: false,
+      bacCollecting: false,
+    }; // force reset on rehydrate
   },
-  { whitelist: ["ble"] }
+  { whitelist: ["ble"] },
 );
 
 const persistConfig = {

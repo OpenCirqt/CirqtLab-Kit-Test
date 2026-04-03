@@ -172,23 +172,23 @@ const styles = StyleSheet.create({
   },
   cell: {
     backgroundColor: Colors.white,
-    paddingHorizontal: px(16),
-    paddingVertical: px(12),
+    paddingHorizontal: px(20),
+    paddingVertical: px(16),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   firstCell: {
-    borderTopLeftRadius: px(10),
-    borderTopRightRadius: px(10),
+    borderTopLeftRadius: px(16),
+    borderTopRightRadius: px(16),
   },
   lastCell: {
-    borderBottomLeftRadius: px(10),
-    borderBottomRightRadius: px(10),
+    borderBottomLeftRadius: px(16),
+    borderBottomRightRadius: px(16),
     borderBottomWidth: 0, // remove last separator
   },
   cellLabel: {
-    flex: 1,
+    flexGrow: 1,
   },
   separator: {
     height: StyleSheet.hairlineWidth,

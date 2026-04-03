@@ -20,7 +20,7 @@ export const dataTypesList = [
 
 export enum DataTypeCategory {
   IMU = "IMU",
-  PPG = "PPG"
+  PPG = "PPG",
 }
 
 export const dataTypeToCategory: Record<DataTypes, DataTypeCategory> = {
@@ -29,8 +29,8 @@ export const dataTypeToCategory: Record<DataTypes, DataTypeCategory> = {
   [DataTypes.MAG]: DataTypeCategory.IMU,
   [DataTypes.PPG_RED]: DataTypeCategory.PPG,
   [DataTypes.PPG_IR]: DataTypeCategory.PPG,
-  [DataTypes.PPG_GREEN]: DataTypeCategory.PPG
-}
+  [DataTypes.PPG_GREEN]: DataTypeCategory.PPG,
+};
 
 export type Status =
   | "idle"
@@ -41,4 +41,6 @@ export type Status =
   | "deleting"
   | "collecting"
   | "uploading"
-  | "loading";
+  | "bacCollecting"
+  | "loading"
+  | "overflowing";

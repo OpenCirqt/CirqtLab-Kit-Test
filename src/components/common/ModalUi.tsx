@@ -31,6 +31,7 @@ interface ModalUiProps {
   onContinue?: () => void;
   onDelete?: () => void;
   onNavigate?: () => void;
+  onConfirm?: () => void;
 }
 
 const ModalUi: React.FC<ModalUiProps> = ({
@@ -42,6 +43,7 @@ const ModalUi: React.FC<ModalUiProps> = ({
   onContinue,
   onDelete,
   onNavigate,
+  onConfirm,
 }) => {
   const rotation = useSharedValue(0);
 
@@ -51,7 +53,7 @@ const ModalUi: React.FC<ModalUiProps> = ({
       rotation.value = withRepeat(
         withTiming(360, { duration: 1000, easing: Easing.linear }),
         -1,
-        false
+        false,
       );
     } else {
       rotation.value = 0;
@@ -139,7 +141,7 @@ const ModalUi: React.FC<ModalUiProps> = ({
               </>
             )}
 
-            {status === "collecting" && (
+            {(status === "collecting" || status === "bacCollecting") && (
               <>
                 <Ionicons
                   name="warning-outline"
@@ -149,7 +151,7 @@ const ModalUi: React.FC<ModalUiProps> = ({
                 />
                 <TextUi tag="h4" weight="medium" style={styles.modalText}>
                   Sorry, you cannot perform firmware upgrade while collecting
-                  sensor data. Please stop data collection to continue.
+                  sensor data samples. Please stop data collection to continue.
                 </TextUi>
                 <ButtonUi size="large" type="warning" onPress={onNavigate}>
                   Back to Dashboard
@@ -165,11 +167,28 @@ const ModalUi: React.FC<ModalUiProps> = ({
                   style={{ alignSelf: "center" }}
                 />
                 <TextUi tag="h4" weight="medium" style={styles.modalText}>
-                  Sorry, you cannot collect sensor data or disconnect device
-                  while performing firmware upgrade. Hang tight.
+                  Sorry, you cannot collect sensor data samples or disconnect
+                  device while performing firmware upgrade. Hang tight.
                 </TextUi>
                 <ButtonUi size="large" type="warning" onPress={onNavigate}>
                   Back to DFU
+                </ButtonUi>
+              </>
+            )}
+            {status === "overflowing" && (
+              <>
+                <Ionicons
+                  name="warning-outline"
+                  size={50}
+                  color={Colors.red}
+                  style={{ alignSelf: "center" }}
+                />
+                <TextUi tag="h4" weight="medium" style={styles.modalText}>
+                  Sorry, buffer is full, stopping collection. Please save your
+                  data.
+                </TextUi>
+                <ButtonUi size="large" type="primary" onPress={onConfirm}>
+                  OK
                 </ButtonUi>
               </>
             )}
